@@ -17,6 +17,7 @@ export default function FeedView({
   const [isPlaying, setIsPlaying] = useState(true);
   const touchStartTime = useRef(0);
   const progressTimerRef = useRef(null);
+  const touchHandledRef = useRef(false); // Guard against double-fire (touchend + synthetic mouseup)
 
   // Filter quotes by favorite status
   const filteredQuotes = favoritesOnly ? quotes.filter(q => q.favorite) : quotes;
@@ -70,12 +71,26 @@ export default function FeedView({
   const handlePressStart = (e) => {
     // Avoid pausing if clicking interactive buttons
     if (e.target.closest('button') || e.target.closest('.action-btn')) return;
+    // Mark touch events so synthetic mouse events are ignored
+    if (e.type === 'touchstart') {
+      touchHandledRef.current = false;
+    }
     touchStartTime.current = Date.now();
     setIsPlaying(false);
   };
 
   const handlePressEnd = (e) => {
     if (e.target.closest('button') || e.target.closest('.action-btn')) return;
+
+    // If this is a synthetic mouseup after a touchend, skip it
+    if (e.type === 'mouseup' && touchHandledRef.current) {
+      touchHandledRef.current = false;
+      return;
+    }
+    if (e.type === 'touchend') {
+      touchHandledRef.current = true;
+    }
+
     setIsPlaying(true);
     
     // Tap detection (if hold duration was less than 300ms)
