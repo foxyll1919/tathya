@@ -163,7 +163,7 @@ export default function FeedView({
 
   return (
     <div 
-      className={`flex-1 flex flex-col justify-between relative overflow-hidden transition-all duration-500 ${themeClass}`}
+      className="flex-1 flex flex-col justify-between relative overflow-hidden transition-all duration-500"
       style={{ height: '100%', userSelect: 'none' }}
       onMouseDown={handlePressStart}
       onMouseUp={handlePressEnd}

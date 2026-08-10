@@ -117,8 +117,14 @@ export default function App() {
     setActiveTab('add');
   };
 
+  const filteredQuotes = favoritesOnly ? quotes.filter(q => q.favorite) : quotes;
+  const activeQuote = filteredQuotes[activeQuoteIndex];
+  const themeClass = activeQuote && activeTab === 'feed'
+    ? `theme-${activeQuote.theme.toLowerCase().replace(/\s+/g, '-')}`
+    : 'theme-charcoal-solid';
+
   return (
-    <div className="app-container">
+    <div className={`app-container ${themeClass}`}>
       {/* Feed View */}
       {activeTab === 'feed' && (
         <FeedView
