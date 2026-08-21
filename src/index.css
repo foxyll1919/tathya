@@ -1,3 +1,5 @@
+@import "../styles/theme.css";
+
 :root {
   /* Design Tokens from Tathya Design MD */
   --color-surface: #121412;
@@ -104,6 +106,8 @@ body {
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  background: var(--bg-gradient, #121412);
+  color: var(--text-primary, var(--color-on-background));
   transition: background 0.5s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
@@ -159,12 +163,12 @@ body {
 }
 
 .theme-charcoal-solid {
-  background-color: #121412;
-  --accent-color: #ffffff;
-  --text-color: #e2e3df;
-  --subtext-color: rgba(226, 227, 223, 0.7);
-  --outline-color: rgba(226, 227, 223, 0.2);
-  --accent-gradient: linear-gradient(135deg, #ffffff, #c6c6c7);
+  background: var(--bg-gradient, #121412);
+  --accent-color: var(--accent-color, #ffffff);
+  --text-color: var(--text-primary, #e2e3df);
+  --subtext-color: var(--text-primary, rgba(226, 227, 223, 0.7));
+  --outline-color: var(--text-primary, rgba(226, 227, 223, 0.2));
+  --accent-gradient: linear-gradient(135deg, var(--accent-color, #ffffff), #c6c6c7);
   --chip-bg: rgba(255, 255, 255, 0.05);
 }
 
@@ -271,8 +275,8 @@ body {
 }
 
 @keyframes scaleIn {
-  from { transform: scale(0.9) opacity: 0; }
-  to { transform: scale(1) opacity: 1; }
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
 }
 
 .animate-slide-up {
@@ -285,6 +289,26 @@ body {
 
 .animate-scale-in {
   animation: scaleIn 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* Share action button interaction states */
+.share-action-btn:focus-visible {
+  outline: 2px solid rgba(255, 255, 255, 0.9);
+  outline-offset: 2px;
+}
+.share-action-btn:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+.share-action-btn:active:not(:disabled) {
+  transform: scale(0.96);
+}
+.share-action-btn:disabled {
+  filter: saturate(0.6);
 }
 
 /* Layout Utilities */

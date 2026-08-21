@@ -1,0 +1,31 @@
+/* Dawn (5 AM – 9 AM) */
+[data-theme='dawn'] {
+    --bg-gradient: linear-gradient(135deg, #fff7ed 0%, #fef3c7 50%, #fde68a 100%);
+    --card-bg: #fffbf5;
+    --text-primary: #78350f;
+    --accent-color: #d97706;
+}
+
+/* Day (9 AM – 5 PM) */
+[data-theme='day'] {
+    --bg-gradient: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #bae6fd 100%);
+    --card-bg: #ffffff;
+    --text-primary: #0c4a6e;
+    --accent-color: #0284c7;
+}
+
+/* Dusk (5 PM – 8 PM) */
+[data-theme='dusk'] {
+    --bg-gradient: linear-gradient(135deg, #2e1065 0%, #581c87 50%, #831843 100%);
+    --card-bg: #3b0764;
+    --text-primary: #f5d0fe;
+    --accent-color: #c084fc;
+}
+
+/* Night (8 PM – 5 AM) */
+[data-theme='night'] {
+    --bg-gradient: linear-gradient(135deg, #020617 0%, #0f172a 50%, #1e1b4b 100%);
+    --card-bg: #090d16;
+    --text-primary: #f8fafc;
+    --accent-color: #6366f1;
+}

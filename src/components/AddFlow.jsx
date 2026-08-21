@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { X, Check, Plus, Tag as TagIcon } from 'lucide-react';
+import { X, Check, Plus } from 'lucide-react';
 
 const PRESET_THEMES = [
   { name: 'Midnight Cobalt', class: 'theme-midnight-cobalt', style: { background: 'linear-gradient(135deg, #10162f 0%, #0b0d1a 100%)' } },
@@ -66,7 +66,6 @@ export default function AddFlow({ onSave, onCancel }) {
     return { fontSize: '28px', fontWeight: '700', fontFamily: 'var(--font-quote)' };
   };
 
-  const currentThemeClass = selectedTheme.class;
 
   return (
     <div 

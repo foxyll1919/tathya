@@ -1,5 +1,5 @@
-import React, { useState, useEffect, useRef } from 'react';
-import { Heart, Share2, Plus, MoreHorizontal, Bookmark, Folder, Volume2, Sparkles, Filter } from 'lucide-react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { Heart, Share2, Plus, MoreHorizontal, Sparkles, Filter } from 'lucide-react';
 
 export default function FeedView({
   quotes,
@@ -10,8 +10,7 @@ export default function FeedView({
   onOpenMenu,
   onToggleFavorite,
   onOpenShare,
-  onOpenAdd,
-  onOpenDelete
+  onOpenAdd
 }) {
   const [progress, setProgress] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
@@ -29,17 +28,17 @@ export default function FeedView({
     }
   }, [filteredQuotes.length, activeQuoteIndex, setActiveQuoteIndex]);
 
-  const handleNextQuote = () => {
+  const handleNextQuote = useCallback(() => {
     setProgress(0);
     if (filteredQuotes.length <= 1) return;
     setActiveQuoteIndex((prev) => (prev + 1) % filteredQuotes.length);
-  };
+  }, [filteredQuotes.length, setActiveQuoteIndex]);
 
-  const handlePrevQuote = () => {
+  const handlePrevQuote = useCallback(() => {
     setProgress(0);
     if (filteredQuotes.length <= 1) return;
     setActiveQuoteIndex((prev) => (prev - 1 + filteredQuotes.length) % filteredQuotes.length);
-  };
+  }, [filteredQuotes.length, setActiveQuoteIndex]);
 
   // Story Auto-Advance Effect
   useEffect(() => {
@@ -65,7 +64,7 @@ export default function FeedView({
     return () => {
       if (progressTimerRef.current) clearInterval(progressTimerRef.current);
     };
-  }, [isPlaying, activeQuoteIndex, filteredQuotes.length]);
+  }, [isPlaying, activeQuoteIndex, filteredQuotes.length, handleNextQuote]);
 
   // Handle Touch/Mouse hold to pause
   const handlePressStart = (e) => {
@@ -173,8 +172,8 @@ export default function FeedView({
     );
   }
 
-  const activeQuote = filteredQuotes[activeQuoteIndex];
-  const themeClass = `theme-${activeQuote.theme.toLowerCase().replace(/\s+/g, '-')}`;
+  const activeQuote = filteredQuotes[activeQuoteIndex] || filteredQuotes[0];
+  if (!activeQuote) return null;
 
   return (
     <div 

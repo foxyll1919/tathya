@@ -3,7 +3,8 @@ import FeedView from './components/FeedView';
 import AddFlow from './components/AddFlow';
 import SuccessView from './components/SuccessView';
 import ShareSheet from './components/ShareSheet';
-import { Heart, Trash2, Share2, ArrowDown, X } from 'lucide-react';
+import { useTimeTheme } from './hooks/useTimeTheme';
+import { Heart, Trash2, Share2, ArrowDown } from 'lucide-react';
 
 const DEFAULT_QUOTES = [
   {
@@ -45,6 +46,8 @@ const DEFAULT_QUOTES = [
 ];
 
 export default function App() {
+  const { theme } = useTimeTheme();
+
   const [quotes, setQuotes] = useState(() => {
     const saved = localStorage.getItem('tathya_wisdom_quotes');
     return saved ? JSON.parse(saved) : DEFAULT_QUOTES;
@@ -54,13 +57,13 @@ export default function App() {
   const [activeQuoteIndex, setActiveQuoteIndex] = useState(0);
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [savedQuotePreview, setSavedQuotePreview] = useState(null);
-  
+
   // Modals & Bottom sheets
   const [selectedQuote, setSelectedQuote] = useState(null); // Quote selected for options
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
 
-  // Sync to local storage
+  // Sync quotes to local storage
   useEffect(() => {
     localStorage.setItem('tathya_wisdom_quotes', JSON.stringify(quotes));
   }, [quotes]);
@@ -77,14 +80,9 @@ export default function App() {
       ...newQuote,
       favorite: false
     };
-    
-    // Add to quotes list
+
     setQuotes((prev) => [quoteObject, ...prev]);
-    
-    // Set preview quote for Success screen
     setSavedQuotePreview(quoteObject);
-    
-    // Go to success screen
     setActiveTab('success');
   };
 
@@ -92,20 +90,17 @@ export default function App() {
     setQuotes((prev) => prev.filter((q) => q.id !== id));
     setIsMenuOpen(false);
     setSelectedQuote(null);
-    
-    // Reset active index if it goes out of bounds
+
     if (activeQuoteIndex > 0 && activeQuoteIndex >= quotes.length - 1) {
       setActiveQuoteIndex(quotes.length - 2);
     }
   };
 
-  // Navigations from Success view
   const handleViewInLibrary = () => {
     if (savedQuotePreview) {
-      // Find the index of the newly added quote in the main or filtered list
       const index = quotes.findIndex(q => q.id === savedQuotePreview.id);
       if (index !== -1) {
-        setFavoritesOnly(false); // Make sure show all is active to see it
+        setFavoritesOnly(false);
         setActiveQuoteIndex(index);
       }
     }
@@ -124,7 +119,7 @@ export default function App() {
     : 'theme-charcoal-solid';
 
   return (
-    <div className={`app-container ${themeClass}`}>
+    <div className={`app-container ${themeClass}`} data-theme={theme}>
       {/* Feed View */}
       {activeTab === 'feed' && (
         <FeedView
@@ -154,7 +149,7 @@ export default function App() {
         />
       )}
 
-      {/* Success/Confirmation Screen */}
+      {/* Success View */}
       {activeTab === 'success' && (
         <SuccessView
           quote={savedQuotePreview}
@@ -174,9 +169,9 @@ export default function App() {
         />
       )}
 
-      {/* Contextual Options Drawer (Bottom Sheet) */}
+      {/* Contextual Options Drawer */}
       {isMenuOpen && selectedQuote && (
-        <div 
+        <div
           style={{
             position: 'absolute',
             top: 0,
@@ -195,8 +190,7 @@ export default function App() {
             setSelectedQuote(null);
           }}
         >
-          {/* Glass drawer panel */}
-          <div 
+          <div
             className="glass-panel animate-slide-up"
             style={{
               backgroundColor: '#161816',
@@ -210,10 +204,8 @@ export default function App() {
             }}
             onClick={(e) => e.stopPropagation()}
           >
-            {/* Horizontal slider bar */}
             <div style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.15)', alignSelf: 'center', marginBottom: 12 }} />
 
-            {/* Quote attribution metadata preview */}
             <div style={{ paddingBottom: 12, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
               <p className="attribution" style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 4 }}>SELECTED WISDOM</p>
               <p style={{ fontSize: 13, color: '#ffffff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontFamily: 'var(--font-quote)' }}>
@@ -221,11 +213,9 @@ export default function App() {
               </p>
             </div>
 
-            {/* Favorite button */}
             <button
               onClick={() => {
                 handleToggleFavorite(selectedQuote.id);
-                // Update selected quote state so ui reflects change
                 setSelectedQuote(prev => ({ ...prev, favorite: !prev.favorite }));
                 setIsMenuOpen(false);
               }}
@@ -251,7 +241,6 @@ export default function App() {
               {selectedQuote.favorite ? 'Remove from Favorites' : 'Add to Favorites'}
             </button>
 
-            {/* Share button */}
             <button
               onClick={() => {
                 setIsMenuOpen(false);
@@ -279,7 +268,6 @@ export default function App() {
               Share and Customize Layout
             </button>
 
-            {/* Delete button (Destructive) */}
             <button
               onClick={() => {
                 if (window.confirm("Are you sure you want to delete this quote from your library?")) {
@@ -308,7 +296,6 @@ export default function App() {
               Delete Permanently
             </button>
 
-            {/* Dismiss button */}
             <button
               onClick={() => {
                 setIsMenuOpen(false);
