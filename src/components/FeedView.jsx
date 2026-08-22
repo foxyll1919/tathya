@@ -302,11 +302,23 @@ export default function FeedView({
 
           {/* Divider and Attribution */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: 8, alignItems: 'flex-start' }}>
-            <div style={{ width: 32, height: 2, backgroundColor: 'var(--accent-color, var(--text-color))', opacity: 0.8 }} />
-            
-            <p className="attribution" style={{ color: 'var(--text-color)', opacity: 0.9 }}>
-              {activeQuote.author || "Anonymous"}
-            </p>
+            <div style={{ display: 'flex', alignItems: 'center', marginLeft: -24 }}>
+              <span
+                aria-hidden="true"
+                style={{
+                  display: 'inline-flex',
+                  width: 18,
+                  height: 2,
+                  backgroundColor: 'var(--accent-color, var(--text-color))',
+                  opacity: 0.8,
+                  marginRight: 6,
+                  flexShrink: 0
+                }}
+              />
+              <p className="attribution" style={{ color: 'var(--text-color)', opacity: 0.9, lineHeight: 1.2 }}>
+                {activeQuote.author || "Anonymous"}
+              </p>
+            </div>
             
             {activeQuote.source && (
               <span className="label-caps" style={{ color: 'var(--subtext-color)', opacity: 0.7 }}>

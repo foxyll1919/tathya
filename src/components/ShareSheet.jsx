@@ -1,6 +1,6 @@
-import React, { useState, useRef, useCallback } from 'react';
-import { X, Copy, Download, Share2, Check, Loader2 } from 'lucide-react';
-import { downloadCardImage, getCardFile } from '../utils/exportCard';
+import React, { useState, useCallback } from 'react';
+import { X, Copy, Download, Share2, Check, Loader2, AlertCircle } from 'lucide-react';
+import { downloadCardPng, getCardFile } from '../utils/cardExport';
 import { useShare } from '../hooks/useShare';
 
 const ASPECT_RATIOS = [
@@ -20,42 +20,56 @@ export default function ShareSheet({ quote, onClose }) {
   const [copied, setCopied] = useState(false);
   const [savedFlash, setSavedFlash] = useState(false);
   const [busy, setBusy] = useState(null);
-  const cardRef = useRef(null);
+  const [error, setError] = useState(null);
+  const [highRes, setHighRes] = useState(false);
   const { shareQuote, copied: shareCopied } = useShare();
+
+  const LONG_EDGE = highRes ? 2160 : 1080;
 
   const handleCopyText = useCallback(async () => {
     if (busy || !quote) return;
     setBusy('copy');
+    setError(null);
     try {
       await navigator.clipboard.writeText(CAPTION(quote));
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     } catch (err) {
       console.error('Copy failed:', err);
+      setError('Could not copy text — your browser blocked the clipboard.');
     } finally {
       setBusy(null);
     }
   }, [busy, quote]);
 
   const handleSave = useCallback(async () => {
-    if (!cardRef.current || busy || !quote) return;
+    if (busy || !quote) return;
     setBusy('save');
+    setError(null);
     try {
-      await downloadCardImage(cardRef.current, FILENAME(quote, selectedRatio));
+      await downloadCardPng(quote, FILENAME(quote, selectedRatio), {
+        ratio: selectedRatio.value,
+        width: LONG_EDGE,
+      });
       setSavedFlash(true);
       setTimeout(() => setSavedFlash(false), 2000);
     } catch (err) {
       console.error('Save failed:', err);
+      setError('Could not generate the image. Please try again.');
     } finally {
       setBusy(null);
     }
-  }, [busy, quote, selectedRatio]);
+  }, [busy, quote, selectedRatio, LONG_EDGE]);
 
   const handleShare = useCallback(async () => {
-    if (!cardRef.current || busy || !quote) return;
+    if (busy || !quote) return;
     setBusy('share');
+    setError(null);
     try {
-      const file = await getCardFile(cardRef.current, FILENAME(quote, selectedRatio));
+      const file = await getCardFile(quote, FILENAME(quote, selectedRatio), {
+        ratio: selectedRatio.value,
+        width: LONG_EDGE,
+      });
       const result = await shareQuote({
         title: `Tathya — ${quote.author || 'Quote'}`,
         text: CAPTION(quote),
@@ -67,10 +81,11 @@ export default function ShareSheet({ quote, onClose }) {
       }
     } catch (err) {
       console.error('Share failed:', err);
+      setError('Could not share. Try SAVE instead.');
     } finally {
       setBusy(null);
     }
-  }, [busy, quote, selectedRatio, shareQuote]);
+  }, [busy, quote, selectedRatio, shareQuote, LONG_EDGE]);
 
   if (!quote) return null;
 
@@ -157,7 +172,6 @@ export default function ShareSheet({ quote, onClose }) {
           }}
         >
           <div
-            ref={cardRef}
             className={`glass-panel ${themeClass}`}
             style={{
               ...selectedRatio.style,
@@ -208,9 +222,20 @@ export default function ShareSheet({ quote, onClose }) {
               {displayText}
             </p>
 
-            <div style={{ display: 'flex', flexDirection: 'column', gap: 4, alignItems: 'flex-start' }}>
-              <div style={{ width: 18, height: 1.5, backgroundColor: 'var(--accent-color, var(--text-color))', opacity: 0.8 }} />
-              <p className="attribution" style={{ color: 'var(--text-color)', fontSize: 9, opacity: 0.9 }}>
+            <div style={{ display: 'flex', alignItems: 'center', marginLeft: -20 }}>
+              <span
+                aria-hidden="true"
+                style={{
+                  display: 'inline-flex',
+                  width: 14,
+                  height: 1.5,
+                  backgroundColor: 'var(--accent-color, var(--text-color))',
+                  opacity: 0.8,
+                  marginRight: 6,
+                  flexShrink: 0
+                }}
+              />
+              <p className="attribution" style={{ color: 'var(--text-color)', fontSize: 9, opacity: 0.9, lineHeight: 1 }}>
                 {quote.author || 'Anonymous'}
               </p>
             </div>
@@ -246,6 +271,55 @@ export default function ShareSheet({ quote, onClose }) {
             );
           })}
         </div>
+
+        <button
+          onClick={() => setHighRes((v) => !v)}
+          disabled={!!busy}
+          aria-pressed={highRes}
+          className="scale-press label-caps"
+          style={{
+            width: '100%',
+            padding: '10px 14px',
+            borderRadius: 'var(--rounded-default)',
+            background: highRes ? 'rgba(255,255,255,0.12)' : 'transparent',
+            border: '1px solid rgba(255,255,255,0.14)',
+            color: highRes ? '#ffffff' : 'rgba(255,255,255,0.6)',
+            cursor: busy ? 'not-allowed' : 'pointer',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'space-between',
+            gap: 8,
+            transition: 'all 0.2s',
+            opacity: busy ? 0.5 : 1
+          }}
+        >
+          <span>QUALITY</span>
+          <span style={{ color: highRes ? '#a7f3d0' : 'rgba(255,255,255,0.8)', fontWeight: 700 }}>
+            {highRes ? '2K · 2160px' : 'HD · 1080px'}
+          </span>
+        </button>
+
+        {error && (
+          <div
+            role="alert"
+            style={{
+              width: '100%',
+              padding: '10px 14px',
+              borderRadius: 'var(--rounded-default)',
+              background: 'rgba(239, 68, 68, 0.1)',
+              border: '1px solid rgba(239, 68, 68, 0.3)',
+              color: '#fecaca',
+              fontFamily: 'var(--font-attribution)',
+              fontSize: 12,
+              display: 'flex',
+              alignItems: 'center',
+              gap: 8
+            }}
+          >
+            <AlertCircle size={14} style={{ flexShrink: 0 }} />
+            <span>{error}</span>
+          </div>
+        )}
 
         <div style={{ display: 'flex', gap: 10, width: '100%' }}>
           <ActionButton

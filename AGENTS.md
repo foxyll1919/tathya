@@ -21,7 +21,15 @@ There is no `test` script. Do not invent one.
 - Entry: `src/main.jsx` → `src/App.jsx`
 - `src/components/` — `FeedView`, `AddFlow`, `SuccessView`, `ShareSheet`, `OnboardingModal`
 - `src/hooks/` — `useTimeTheme.js` (time-of-day), `useShare.js`
-- `src/utils/exportCard.js` — `downloadCardImage` / `getCardFile` via `html-to-image` (filters out nodes with class `no-export`)
+- `src/utils/cardExport/` — SVG-based card export pipeline (replaced html-to-image):
+  - `exportQuoteCard.js` / `index.js` — public API (`downloadCardPng`, `getCardFile`, `downloadCardSvg`)
+  - `quoteCardToSvg.js` — renders card state to a standalone SVG string
+  - `svgToPng.js` — Blob → Image → Canvas rasterizer at arbitrary output resolution
+  - `themeTokens.js` — JS mirror of the `.theme-*` CSS classes; **must stay in sync with `index.css`**
+  - `gradientToSvg.js` — parses CSS `linear-gradient()` into SVG `<linearGradient>` defs
+  - `wrapText.js` — DOM-measured word wrap (requires fonts loaded first)
+  - `fontEmbed.js` — fetches woff2 files, base64-embeds them as data URIs into exported SVGs (blob:-loaded SVGs cannot resolve relative font URLs)
+- Fonts are self-hosted: `public/fonts/*.woff2` + `@font-face` in `src/fonts.css`. No Google Fonts requests.
 - App-level tab routing is a single `activeTab` state in `App.jsx`: `'feed' | 'add' | 'success'`. There is no router.
 
 ## Persistence (`localStorage` keys)

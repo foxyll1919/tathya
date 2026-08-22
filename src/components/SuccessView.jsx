@@ -93,10 +93,23 @@ export default function SuccessView({ quote, onViewLibrary, onAddAnother }) {
         </p>
         
         <div style={{ display: 'flex', flexDirection: 'column', gap: 4 }}>
-          <div style={{ width: 24, height: 1.5, backgroundColor: 'var(--accent-color, var(--text-color))', opacity: 0.8, marginBottom: 4 }} />
-          <p className="attribution" style={{ color: 'var(--text-color)', fontSize: 11, opacity: 0.9 }}>
-            {quote.author || 'Anonymous'}
-          </p>
+          <div style={{ display: 'flex', alignItems: 'center', marginLeft: -24 }}>
+<span
+                aria-hidden="true"
+                style={{
+                  display: 'inline-flex',
+                  width: 18,
+                  height: 1.5,
+                  backgroundColor: 'var(--accent-color, var(--text-color))',
+                  opacity: 0.8,
+                  marginRight: 6,
+                  flexShrink: 0
+                }}
+              />
+            <p className="attribution" style={{ color: 'var(--text-color)', fontSize: 11, opacity: 0.9, lineHeight: 1 }}>
+              {quote.author || 'Anonymous'}
+            </p>
+          </div>
           {quote.source && (
             <p className="label-caps" style={{ color: 'var(--subtext-color)', fontSize: 9, opacity: 0.7 }}>
               {quote.source}
