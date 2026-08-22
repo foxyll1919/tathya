@@ -222,19 +222,7 @@ export default function ShareSheet({ quote, onClose }) {
               {displayText}
             </p>
 
-            <div style={{ display: 'flex', alignItems: 'center', marginLeft: -20 }}>
-              <span
-                aria-hidden="true"
-                style={{
-                  display: 'inline-flex',
-                  width: 14,
-                  height: 1.5,
-                  backgroundColor: 'var(--accent-color, var(--text-color))',
-                  opacity: 0.8,
-                  marginRight: 6,
-                  flexShrink: 0
-                }}
-              />
+            <div>
               <p className="attribution" style={{ color: 'var(--text-color)', fontSize: 9, opacity: 0.9, lineHeight: 1 }}>
                 {quote.author || 'Anonymous'}
               </p>

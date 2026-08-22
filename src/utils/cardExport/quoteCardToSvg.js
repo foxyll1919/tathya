@@ -131,10 +131,9 @@ export function quoteCardToSvg(cardState, options = {}) {
   // slight upward bias to leave room for the decoration at the top.
   const totalQuoteHeight = quoteLines.length * qLh;
   const dividerGap = qSize * 0.45;
-  const dividerH = Math.max(2, Math.round(W * 0.006));
   const authorGap = aSize * 0.35;
   const authorBlockHeight = aLh + (includeSource && source ? sLh + 4 : 0);
-  const blockTop = innerTop + (innerBottom - innerTop - totalQuoteHeight - dividerGap - dividerH - authorBlockHeight) / 2;
+  const blockTop = innerTop + (innerBottom - innerTop - totalQuoteHeight - dividerGap - authorBlockHeight) / 2;
 
   // ---- Decorative quote mark -------------------------------------------
   const qmSize = quoteMarkSize(W);
@@ -177,18 +176,9 @@ export function quoteCardToSvg(cardState, options = {}) {
   // text-transform:uppercase; CSS transforms are unreliable in
   // isolated SVG rendering contexts).
   const dividerY = (blockTop + totalQuoteHeight + dividerGap).toFixed(2);
-  const authorY = (parseFloat(dividerY) + dividerH + authorGap).toFixed(2);
+  const authorY = (parseFloat(dividerY) + authorGap).toFixed(2);
   const authorEl = `<text x="${innerLeft}" y="${authorY}" font-family="${FONT_FAMILY_ATTRIBUTION}" font-size="${aSize.toFixed(2)}" font-weight="500" fill="${tokens.text}" fill-opacity="0.9" letter-spacing="${(aSize * 0.05).toFixed(2)}">${escapeXml(String(author || 'Anonymous').toUpperCase())}</text>`;
 
-  // Accent dash — inline with the author, hanging in the left gutter.
-  // All geometry derives from the author layout (baseline authorY at
-  // x = innerLeft), so it scales with every aspect ratio and resolution.
-  const capHeight = aSize * 0.72;
-  const dashGap = authorGap;
-  const dashW = Math.round(aSize * 0.9);
-  const dashX = (innerLeft - dashGap - dashW).toFixed(2);
-  const dashY = (parseFloat(authorY) - capHeight / 2 - dividerH / 2).toFixed(2);
-  const divider = `<rect x="${dashX}" y="${dashY}" width="${dashW}" height="${dividerH}" fill="${tokens.accent}" fill-opacity="0.8"/>`;
 
   let sourceEl = '';
   if (includeSource && source) {
@@ -230,7 +220,6 @@ export function quoteCardToSvg(cardState, options = {}) {
     border,
     decoration,
     quoteText,
-    divider,
     authorEl,
     sourceEl,
     tagsEl,
