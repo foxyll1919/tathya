@@ -26,6 +26,7 @@ export default function FeedView({
   const [isPausedByUser, setIsPausedByUser] = useState(false);
   const touchStartTime = useRef(0);
   const progressTimerRef = useRef(null);
+  const pressStartedOnCardRef = useRef(false);
   const touchHandledRef = useRef(false); // Guard against double-fire (touchend + synthetic mouseup)
 
   const reducedMotion = prefersReducedMotion();
@@ -66,13 +67,7 @@ export default function FeedView({
     const step = (TICK_MS / STORY_DURATION_MS) * 100;
 
     progressTimerRef.current = setInterval(() => {
-      setProgress((prev) => {
-        if (prev >= 100) {
-          handleNextQuote();
-          return 0;
-        }
-        return prev + step;
-      });
+      setProgress((prev) => Math.min(prev + step, 100));
     }, TICK_MS);
 
     return () => {
@@ -80,10 +75,26 @@ export default function FeedView({
     };
   }, [isPlaying, isPausedByUser, reducedMotion, activeQuoteIndex, filteredQuotes.length, handleNextQuote]);
 
+  // Advance after the progress update commits. State updater functions must
+  // stay pure; calling handleNextQuote inside setProgress triggers a parent
+  // update while FeedView is rendering, especially visible under React 19.
+  useEffect(() => {
+    if (
+      progress >= 100 &&
+      isPlaying &&
+      !isPausedByUser &&
+      !reducedMotion &&
+      !document.hidden
+    ) {
+      handleNextQuote();
+    }
+  }, [progress, isPlaying, isPausedByUser, reducedMotion, handleNextQuote]);
+
   // Handle Touch/Mouse hold to pause
   const handlePressStart = (e) => {
     // Avoid pausing if clicking interactive buttons
     if (e.target.closest('button') || e.target.closest('.action-btn') || e.target.closest('a')) return;
+    pressStartedOnCardRef.current = true;
     // Mark touch events so synthetic mouse events are ignored
     if (e.type === 'touchstart') {
       touchHandledRef.current = false;
@@ -93,18 +104,26 @@ export default function FeedView({
   };
 
   const handlePressEnd = (e) => {
-    if (e.target.closest('button') || e.target.closest('.action-btn') || e.target.closest('a')) return;
-
     // If this is a synthetic mouseup after a touchend, skip it
     if (e.type === 'mouseup' && touchHandledRef.current) {
       touchHandledRef.current = false;
       return;
     }
+    if (!pressStartedOnCardRef.current) return;
+
+    pressStartedOnCardRef.current = false;
     if (e.type === 'touchend') {
       touchHandledRef.current = true;
     }
 
+    // Restore playback even if the finger drifted onto a control before lift.
     setIsPlaying(true);
+    const endedOnControl =
+      e.target.closest('button') || e.target.closest('.action-btn') || e.target.closest('a');
+    if (endedOnControl) {
+      touchStartTime.current = 0;
+      return;
+    }
 
     // Tap detection (if hold duration was less than 300ms)
     const holdDuration = Date.now() - touchStartTime.current;
@@ -119,6 +138,13 @@ export default function FeedView({
         handleNextQuote();
       }
     }
+  };
+
+  const handlePressCancel = () => {
+    if (!pressStartedOnCardRef.current) return;
+    pressStartedOnCardRef.current = false;
+    touchStartTime.current = 0;
+    setIsPlaying(true);
   };
 
   // Keyboard equivalent for the swipe/tap navigation, plus a pause toggle.
@@ -208,6 +234,7 @@ export default function FeedView({
       onMouseUp={handlePressEnd}
       onTouchStart={handlePressStart}
       onTouchEnd={handlePressEnd}
+      onTouchCancel={handlePressCancel}
     >
       {/* Story Progress Indicators at the Top */}
       <div
@@ -267,10 +294,15 @@ export default function FeedView({
               type="button"
               onClick={(e) => {
                 e.stopPropagation();
-                setIsPausedByUser((v) => !v);
+                if (isPlayingStory) {
+                  setIsPausedByUser(true);
+                } else {
+                  setIsPlaying(true);
+                  setIsPausedByUser(false);
+                }
               }}
               aria-pressed={isPausedByUser}
-              aria-label="Pause story autoplay"
+              aria-label={isPlayingStory ? 'Pause story autoplay' : 'Resume story autoplay'}
               className="icon-btn icon-btn--plain"
               style={{ color: 'var(--text-color)' }}
             >
