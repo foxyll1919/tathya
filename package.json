@@ -6,11 +6,12 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "lint": "oxlint",
-    "preview": "vite preview"
+    "lint": "oxlint src scripts vite.config.js",
+    "preview": "vite preview",
+    "curate:photos": "node scripts/curate-photos.mjs",
+    "check:photos": "node scripts/check-photos.mjs"
   },
   "dependencies": {
-    "framer-motion": "^13.1.0",
     "lucide-react": "^1.31.0",
     "react": "^19.2.8",
     "react-dom": "^19.2.8"

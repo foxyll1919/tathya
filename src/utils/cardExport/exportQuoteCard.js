@@ -19,28 +19,54 @@
 import { quoteCardToSvg, dimensionsFor } from './quoteCardToSvg';
 import { svgStringToPng } from './svgToPng';
 import { getEmbeddedFontCss } from './fontEmbed';
+import { bakeBackdrop } from './photoBake';
+import { getStyle } from '../../design/presets';
 
 const DEFAULT_RATIO = '1/1';
 const DEFAULT_LONG_EDGE = 1080;
-const REQUIRED_FONTS = [
-  { family: 'Syne', weight: '700' },
-  { family: 'Manrope', weight: '500' },
-  { family: 'Space Grotesk', weight: '500' },
-];
+
+/**
+ * Bake the backdrop for export, tolerating every failure mode.
+ * Returns null when there is nothing to bake — a gradient-backed card is
+ * a perfectly valid result, so the user never sees a hard export error
+ * because a photo could not be fetched.
+ */
+async function resolveBackdropBake(backdrop, style, tint, logical) {
+  if (!backdrop?.url) return null;
+  try {
+    return await bakeBackdrop({
+      photo: backdrop,
+      style,
+      tint,
+      width: logical.width,
+      height: logical.height,
+    });
+  } catch {
+    return null;
+  }
+}
+
+/** Photographer credit string for the exported card, or null if uncredited. */
+function creditFor(backdrop) {
+  const credit = backdrop?.credit;
+  if (!credit?.name) return null;
+  return { text: `Photo by ${credit.name}` };
+}
 
 /**
  * Wait for the fonts the export will need. Safe to call repeatedly —
  * resolves immediately once all fonts are already loaded.
  */
-export async function ensureExportFontsReady() {
+export async function ensureExportFontsReady(style = 'ethereal') {
   if (typeof document === 'undefined' || !document.fonts) return;
+  const required = getStyle(style).exportFonts;
   await document.fonts.ready;
   // Defensive: document.fonts.ready resolves when *any* load settles,
   // not necessarily the ones we care about. Explicitly await each
   // font we depend on so a race in font load order can't produce a
   // wrong-font PNG.
   await Promise.all(
-    REQUIRED_FONTS.map((f) =>
+    required.map((f) =>
       document.fonts.load(`${f.weight} 32px "${f.family}"`).catch(() => null)
     )
   );
@@ -50,22 +76,40 @@ export async function ensureExportFontsReady() {
  * Generate a PNG blob of the given quote at the requested dimensions.
  *
  * @param {object} card - { text, author, source, theme, tags, ... }
- * @param {object} options - { ratio, width, height, includeTags, includeSource, decorativeQuote }
+ * @param {object} options - { ratio, width, height, style, palette,
+ *                             backdrop, includeTags, includeSource,
+ *                             decorativeQuote }
  * @returns {Promise<Blob>} PNG blob
  */
 export async function renderQuoteCardPng(card, options = {}) {
   const ratio = options.ratio || DEFAULT_RATIO;
   const longEdge = options.width || options.height || DEFAULT_LONG_EDGE;
+  const style = options.style || 'ethereal';
+
+  const logical = dimensionsFor(longEdge, ratio);
+
+  // Bake the backdrop first: it is the slow step (network + canvas) and
+  // it must not be gated behind font preloading. A failed bake resolves
+  // to null and the card falls back to its gradient background.
+  const backdrop = await resolveBackdropBake(
+    options.backdrop,
+    style,
+    options.tint,
+    logical
+  );
 
   // Fonts must be loaded in the live document before wrapText measures,
   // and the embedded @font-face data must be fetched for the SVG itself.
-  await ensureExportFontsReady();
-  const fontCss = await getEmbeddedFontCss();
+  await ensureExportFontsReady(style);
+  const fontCss = await getEmbeddedFontCss(getStyle(style).exportFonts);
 
-  const logical = dimensionsFor(longEdge, ratio);
   const svg = quoteCardToSvg(card, {
     width: logical.width,
     ratio,
+    style,
+    photo: backdrop,
+    photoCredit: backdrop ? creditFor(options.backdrop) : null,
+    colors: options.colors || null,
     includeTags: options.includeTags,
     includeSource: options.includeSource,
     decorativeQuote: options.decorativeQuote,
@@ -88,7 +132,13 @@ export async function renderQuoteCardPng(card, options = {}) {
   return svgStringToPng(svg, pixelTarget);
 }
 
-/** Generate the raw SVG string for the card. */
+/**
+ * Generate the raw SVG string for the card.
+ *
+ * Synchronous, so it cannot bake a remote backdrop — the .svg download
+ * always renders the gradient background. `downloadCardSvg` is a niche
+ * developer path; `downloadCardPng` is the one the UI exposes.
+ */
 export function renderQuoteCardSvg(card, options = {}) {
   const ratio = options.ratio || DEFAULT_RATIO;
   const longEdge = options.width || options.height || DEFAULT_LONG_EDGE;
@@ -96,6 +146,8 @@ export function renderQuoteCardSvg(card, options = {}) {
   return quoteCardToSvg(card, {
     width: logical.width,
     ratio,
+    style: options.style,
+    colors: options.colors || null,
     includeTags: options.includeTags,
     includeSource: options.includeSource,
     decorativeQuote: options.decorativeQuote,

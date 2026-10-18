@@ -1,31 +1,75 @@
-/* Dawn (5 AM – 9 AM) */
+/*
+ * Photo backdrop — per-time-of-day surface tone.
+ *
+ * These are the `per-quote` fallbacks: an explicit palette sets its own
+ * on .app-container[data-palette='…'] and wins on specificity. Declared
+ * on :root (same element as [data-theme]) so the per-theme rules below
+ * override them by source order.
+ *
+ * Mirrored in src/design/photoPresets.js (PHOTO_TINTS.dark / .light),
+ * which the canvas export bake uses instead of reading CSS.
+ */
+
+:root {
+    --photo-tint: #080b18;
+    --photo-tint-opacity: 0.28;
+    --photo-tint-blend: multiply;
+    --photo-scrim-from: rgba(8, 11, 24, 0.42);
+    --photo-scrim-to: rgba(4, 6, 14, 0.78);
+}
+
+/* Dawn (5 AM – 9 AM) — light surface */
 [data-theme='dawn'] {
     --bg-gradient: linear-gradient(135deg, #fff7ed 0%, #fef3c7 50%, #fde68a 100%);
     --card-bg: #fffbf5;
     --text-primary: #78350f;
     --accent-color: #d97706;
+    --on-accent: #fffbeb;
+    --photo-tint: #f3e3cd;
+    --photo-tint-opacity: 0.28;
+    --photo-tint-blend: multiply;
+    --photo-scrim-from: rgba(255, 250, 242, 0.45);
+    --photo-scrim-to: rgba(243, 232, 214, 0.82);
 }
 
-/* Day (9 AM – 5 PM) */
+/* Day (9 AM – 5 PM) — light surface */
 [data-theme='day'] {
     --bg-gradient: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #bae6fd 100%);
     --card-bg: #ffffff;
     --text-primary: #0c4a6e;
     --accent-color: #0284c7;
+    --on-accent: #f0f9ff;
+    --photo-tint: #e2eef8;
+    --photo-tint-opacity: 0.28;
+    --photo-tint-blend: multiply;
+    --photo-scrim-from: rgba(247, 252, 255, 0.45);
+    --photo-scrim-to: rgba(232, 243, 251, 0.82);
 }
 
-/* Dusk (5 PM – 8 PM) */
+/* Dusk (5 PM – 8 PM) — dark surface */
 [data-theme='dusk'] {
     --bg-gradient: linear-gradient(135deg, #2e1065 0%, #581c87 50%, #831843 100%);
     --card-bg: #3b0764;
     --text-primary: #f5d0fe;
     --accent-color: #c084fc;
+    --on-accent: #2e1065;
+    --photo-tint: #1d1030;
+    --photo-tint-opacity: 0.28;
+    --photo-tint-blend: multiply;
+    --photo-scrim-from: rgba(30, 12, 48, 0.42);
+    --photo-scrim-to: rgba(18, 8, 30, 0.78);
 }
 
-/* Night (8 PM – 5 AM) */
+/* Night (8 PM – 5 AM) — dark surface */
 [data-theme='night'] {
     --bg-gradient: linear-gradient(135deg, #020617 0%, #0f172a 50%, #1e1b4b 100%);
     --card-bg: #090d16;
     --text-primary: #f8fafc;
-    --accent-color: #6366f1;
+    --accent-color: #a5b4fc;
+    --on-accent: #0b1020;
+    --photo-tint: #080b18;
+    --photo-tint-opacity: 0.28;
+    --photo-tint-blend: multiply;
+    --photo-scrim-from: rgba(8, 11, 24, 0.42);
+    --photo-scrim-to: rgba(4, 6, 14, 0.78);
 }

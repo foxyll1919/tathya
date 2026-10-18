@@ -1,5 +1,6 @@
-@import "./fonts.css";
-@import "../styles/theme.css";
+@import './fonts.css';
+@import '../styles/theme.css';
+@import './design.css';
 
 :root {
   /* Design Tokens from Tathya Design MD */
@@ -18,36 +19,37 @@
   --color-outline: #8e9192;
   --color-outline-variant: #444748;
   --color-surface-tint: #c6c6c7;
-  
+
   --color-primary: #ffffff;
   --color-on-primary: #2f3131;
   --color-primary-container: #e2e2e2;
   --color-on-primary-container: #636565;
   --color-inverse-primary: #5d5f5f;
-  
+
   --color-secondary: #c6c6c6;
   --color-on-secondary: #303030;
   --color-secondary-container: #474747;
   --color-on-secondary-container: #b5b5b5;
-  
+
   --color-tertiary: #ffffff;
   --color-on-tertiary: #2f3131;
   --color-tertiary-container: #e2e2e2;
   --color-on-tertiary-container: #636565;
-  
+
   --color-error: #ffb4ab;
   --color-on-error: #690005;
   --color-error-container: #93000a;
   --color-on-error-container: #ffdad6;
-  
+
   --color-background: #121412;
   --color-on-background: #e2e3df;
   --color-surface-variant: #333533;
 
-  /* Typography */
+  /* Typography — every style preset redefines these three. */
   --font-quote: 'Syne', sans-serif;
   --font-attribution: 'Manrope', sans-serif;
   --font-label: 'Space Grotesk', sans-serif;
+  --font-script: 'Caveat', cursive;
 
   /* Rounded Corners */
   --rounded-sm: 0.5rem;
@@ -75,7 +77,19 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  -webkit-tap-highlight-color: transparent;
+  -webkit-tap-highlight-color: rgba(255, 255, 255, 0.12);
+}
+
+html {
+  color-scheme: dark;
+  /* Desktop rubber-band suppression. Coarse pointers keep the native
+     pull-to-refresh behaviour, so this is scoped to fine pointers. */
+}
+
+@media (pointer: fine) {
+  html {
+    overscroll-behavior: none;
+  }
 }
 
 body {
@@ -95,7 +109,7 @@ body {
   background: transparent;
 }
 ::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--chrome-border-strong, rgba(255, 255, 255, 0.2));
   border-radius: 2px;
 }
 
@@ -108,69 +122,156 @@ body {
   flex-direction: column;
   overflow: hidden;
   background: var(--bg-gradient, #121412);
-  color: var(--text-primary, var(--color-on-background));
-  transition: background 0.5s cubic-bezier(0.4, 0, 0.2, 1);
+  color: var(--text-color, var(--color-on-background));
+  transition: background-color 0.4s ease, color 0.4s ease;
+  /* Kill the 300ms tap delay and stop iOS from owning text selection. */
+  touch-action: manipulation;
+  -webkit-user-select: none;
+  user-select: none;
 }
 
-/* Designer Theme System Preset Styles */
+/* Readable, reset form controls inherit the chrome palette. */
+.app-container input,
+.app-container textarea,
+.app-container select {
+  -webkit-user-select: text;
+  user-select: text;
+  font-family: inherit;
+}
+
+/* The single main landmark — the view host for whichever tab is active.
+   Lifted above the photo backdrop so the blend modes in .photo-layer
+   can never wash out the quote text. */
+.app-container > main {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  position: relative;
+  z-index: 1;
+}
+
+/* Quote text is the one thing people actually want to copy. */
+.app-container blockquote {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* --------------------------------------------------------------------------
+   Focus — a single, always-visible ring. Never removed without replacement.
+   -------------------------------------------------------------------------- */
+
+.app-container :focus-visible {
+  outline: var(--focus-ring-width, 2px) solid var(--accent-color);
+  outline-offset: var(--focus-ring-offset, 3px);
+}
+
+/* Keyboard users get the ring; pointer users never do. */
+.app-container :focus:not(:focus-visible) {
+  outline: none;
+}
+
+/* --------------------------------------------------------------------------
+   Designer Theme System Preset Styles (per-quote color)
+   -------------------------------------------------------------------------- */
+
 .theme-midnight-cobalt {
   background: linear-gradient(185deg, #10162f 0%, #0b0d1a 50%, #04050a 100%);
-  --accent-color: #3b82f6;
+  --accent-color: #6f9bff;
+  --on-accent: #050a1c;
   --text-color: #ffffff;
-  --subtext-color: rgba(255, 255, 255, 0.7);
-  --outline-color: rgba(59, 130, 246, 0.3);
-  --accent-gradient: linear-gradient(135deg, #3b82f6, #8b5cf6);
-  --chip-bg: rgba(59, 130, 246, 0.1);
+  --subtext-color: rgba(255, 255, 255, 0.74);
+  --outline-color: rgba(111, 155, 255, 0.34);
+  --accent-gradient: linear-gradient(135deg, #6f9bff, #a78bfa);
+  --chip-bg: rgba(111, 155, 255, 0.12);
 }
 
 .theme-ethereal-dawn {
   background: linear-gradient(185deg, #2b1e42 0%, #1e1b30 50%, #0d0c15 100%);
   --accent-color: #d8b4fe;
+  --on-accent: #1e1330;
   --text-color: #ffffff;
-  --subtext-color: rgba(255, 255, 255, 0.7);
-  --outline-color: rgba(216, 180, 254, 0.3);
+  --subtext-color: rgba(255, 255, 255, 0.74);
+  --outline-color: rgba(216, 180, 254, 0.34);
   --accent-gradient: linear-gradient(135deg, #f472b6, #d8b4fe);
-  --chip-bg: rgba(216, 180, 254, 0.1);
+  --chip-bg: rgba(216, 180, 254, 0.12);
 }
 
 .theme-forest-green {
   background: linear-gradient(185deg, #0b2518 0%, #07170f 50%, #030805 100%);
   --accent-color: #34d399;
+  --on-accent: #04231a;
   --text-color: #ffffff;
-  --subtext-color: rgba(255, 255, 255, 0.7);
-  --outline-color: rgba(52, 211, 153, 0.3);
+  --subtext-color: rgba(255, 255, 255, 0.74);
+  --outline-color: rgba(52, 211, 153, 0.34);
   --accent-gradient: linear-gradient(135deg, #34d399, #059669);
-  --chip-bg: rgba(52, 211, 153, 0.1);
+  --chip-bg: rgba(52, 211, 153, 0.12);
 }
 
 .theme-sunset-orange {
   background: linear-gradient(185deg, #380e14 0%, #1d070a 50%, #0c0204 100%);
   --accent-color: #fb923c;
+  --on-accent: #2a0d02;
   --text-color: #ffffff;
-  --subtext-color: rgba(255, 255, 255, 0.7);
-  --outline-color: rgba(251, 146, 60, 0.3);
+  --subtext-color: rgba(255, 255, 255, 0.74);
+  --outline-color: rgba(251, 146, 60, 0.34);
   --accent-gradient: linear-gradient(135deg, #fb923c, #ec4899);
-  --chip-bg: rgba(251, 146, 60, 0.1);
+  --chip-bg: rgba(251, 146, 60, 0.12);
 }
 
+/* Light quote theme — the chrome above it has to invert too. */
 .theme-sand-solid {
   background-color: #f5f2eb;
-  --accent-color: #2f312e;
+  --accent-color: #8a3324;
+  --on-accent: #fdf6f0;
   --text-color: #1e201e;
-  --subtext-color: rgba(30, 32, 30, 0.7);
-  --outline-color: rgba(30, 32, 30, 0.3);
-  --accent-gradient: linear-gradient(135deg, #1e201e, #3a3f3a);
-  --chip-bg: rgba(30, 32, 30, 0.05);
+  --subtext-color: rgba(30, 32, 30, 0.76);
+  --outline-color: rgba(30, 32, 30, 0.32);
+  --accent-gradient: linear-gradient(135deg, #8a3324, #b4553c);
+  --chip-bg: rgba(30, 32, 30, 0.06);
+
+  --chrome-bg: #e6dfcd;
+  --chrome-surface: #fbf8f1;
+  --chrome-surface-2: rgba(30, 32, 30, 0.05);
+  --chrome-surface-3: rgba(30, 32, 30, 0.1);
+  --chrome-border: rgba(30, 32, 30, 0.16);
+  --chrome-border-strong: rgba(30, 32, 30, 0.3);
+  --chrome-fg: #1e201e;
+  --chrome-fg-muted: rgba(30, 32, 30, 0.78);
+  --chrome-scrim: rgba(58, 48, 30, 0.5);
+  --chrome-track: rgba(30, 32, 30, 0.24);
+  --danger-fg: #8c1d18;
+  --danger-surface: rgba(140, 29, 24, 0.08);
+  --danger-border: rgba(140, 29, 24, 0.28);
+  --success-fg: #1c6b46;
+  --shadow-panel: 0 8px 28px rgba(58, 48, 30, 0.16);
+  --shadow-card: 0 18px 36px -20px rgba(58, 48, 30, 0.45);
+
+  /* Light surface, so the photo scrim has to be light too. */
+  --photo-tint: #f2ecdd;
+  --photo-tint-opacity: 0.28;
+  --photo-tint-blend: multiply;
+  --photo-scrim-from: rgba(253, 251, 245, 0.45);
+  --photo-scrim-to: rgba(245, 240, 228, 0.82);
 }
 
+/*
+ * Fallback theme: color comes from the time-of-day tokens set on <html>
+ * by useTimeTheme. --accent-color / --on-accent are deliberately *not*
+ * redeclared here so they inherit — a self-referential `var(--accent-color)`
+ * would be invalid at computed-value time.
+ */
 .theme-charcoal-solid {
   background: var(--bg-gradient, #121412);
-  --accent-color: var(--accent-color, #ffffff);
   --text-color: var(--text-primary, #e2e3df);
-  --subtext-color: var(--text-primary, rgba(226, 227, 223, 0.7));
-  --outline-color: var(--text-primary, rgba(226, 227, 223, 0.2));
-  --accent-gradient: linear-gradient(135deg, var(--accent-color, #ffffff), #c6c6c7);
-  --chip-bg: rgba(255, 255, 255, 0.05);
+  --subtext-color: var(--text-primary, rgba(226, 227, 223, 0.74));
+  --outline-color: color-mix(in srgb, var(--text-primary, #e2e3df) 30%, transparent);
+  --accent-gradient: linear-gradient(
+    135deg,
+    var(--accent-color, #ffffff),
+    var(--text-primary, #c6c6c7)
+  );
+  --chip-bg: color-mix(in srgb, var(--text-primary, #e2e3df) 10%, transparent);
 }
 
 /* Interactions */
@@ -183,11 +284,11 @@ body {
 
 /* Glassmorphism Panel styles */
 .glass-panel {
-  background: var(--glass-bg);
-  backdrop-filter: var(--glass-blur);
-  -webkit-backdrop-filter: var(--glass-blur);
-  border: var(--metallic-border);
-  box-shadow: var(--metallic-shadow);
+  background: var(--panel-fill, var(--glass-bg));
+  backdrop-filter: var(--panel-blur, var(--glass-blur));
+  -webkit-backdrop-filter: var(--panel-blur, var(--glass-blur));
+  border: var(--hairline, 1px) solid var(--chrome-border, var(--metallic-border));
+  box-shadow: var(--shadow-panel, var(--metallic-shadow));
 }
 
 /* Button & Icons animations */
@@ -208,55 +309,82 @@ body {
   opacity: 1;
 }
 
-/* Typography styles matching tokens */
+/* --------------------------------------------------------------------------
+   Typography — values come from the active design style (src/design.css)
+   -------------------------------------------------------------------------- */
+
 .quote-display {
   font-family: var(--font-quote);
-  font-size: 38px;
-  font-weight: 800;
-  line-height: 1.15;
-  letter-spacing: -0.03em;
+  font-size: var(--quote-size-display, 38px);
+  font-weight: var(--quote-weight, 800);
+  line-height: var(--quote-leading, 1.15);
+  letter-spacing: var(--quote-tracking, -0.03em);
+  text-transform: var(--quote-transform, none);
+  text-wrap: balance;
 }
 
 .quote-lg {
   font-family: var(--font-quote);
-  font-size: 30px;
-  font-weight: 700;
-  line-height: 1.2;
-  letter-spacing: -0.02em;
+  font-size: var(--quote-size-lg, 30px);
+  font-weight: var(--quote-weight, 800);
+  line-height: var(--quote-leading, 1.15);
+  letter-spacing: var(--quote-tracking, -0.03em);
+  text-transform: var(--quote-transform, none);
+  text-wrap: balance;
 }
 
 .quote-md {
   font-family: var(--font-quote);
-  font-size: 22px;
-  font-weight: 600;
-  line-height: 1.35;
-  letter-spacing: -0.01em;
+  font-size: var(--quote-size-md, 22px);
+  font-weight: var(--quote-weight-long, 600);
+  line-height: var(--quote-leading, 1.15);
+  letter-spacing: var(--quote-tracking, -0.03em);
+  text-transform: var(--quote-transform, none);
+  text-wrap: pretty;
+}
+
+.quote-mark {
+  font-family: var(--quote-mark-family, var(--font-quote));
+  color: var(--text-color);
+  opacity: var(--quote-mark-opacity, 0.08);
+  line-height: 0;
+  pointer-events: none;
+  user-select: none;
 }
 
 .attribution {
   font-family: var(--font-attribution);
-  font-size: 14px;
-  font-weight: 500;
-  line-height: 20px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-size: var(--attribution-size, 14px);
+  font-weight: var(--attribution-weight, 500);
+  line-height: 1.25;
+  letter-spacing: var(--attribution-tracking, 0.06em);
+  text-transform: var(--attribution-transform, uppercase);
+  font-style: normal;
 }
 
 .label-caps {
   font-family: var(--font-label);
   font-size: 11px;
-  font-weight: 700;
-  line-height: 14px;
-  letter-spacing: 0.05em;
-  text-transform: uppercase;
+  font-weight: var(--label-weight, 700);
+  line-height: 1.4;
+  letter-spacing: var(--label-tracking, 0.05em);
+  text-transform: var(--label-transform, uppercase);
 }
 
 /* Desktop sizing adaptation */
 @media (min-width: 769px) {
-  .quote-display { font-size: 42px; }
-  .quote-lg { font-size: 34px; }
-  .quote-md { font-size: 24px; }
-  .attribution { font-size: 15px; }
+  .quote-display {
+    font-size: calc(var(--quote-size-display, 38px) * var(--quote-size-scale-desktop, 1.1));
+  }
+  .quote-lg {
+    font-size: calc(var(--quote-size-lg, 30px) * var(--quote-size-scale-desktop, 1.1));
+  }
+  .quote-md {
+    font-size: calc(var(--quote-size-md, 22px) * var(--quote-size-scale-desktop, 1.1));
+  }
+  .attribution {
+    font-size: calc(var(--attribution-size, 14px) * 1.07);
+  }
 }
 
 /* Animations */
@@ -299,7 +427,7 @@ body {
 
 /* Share action button interaction states */
 .share-action-btn:focus-visible {
-  outline: 2px solid rgba(255, 255, 255, 0.9);
+  outline: 2px solid var(--accent-color);
   outline-offset: 2px;
 }
 .share-action-btn:hover:not(:disabled) {
@@ -310,6 +438,22 @@ body {
 }
 .share-action-btn:disabled {
   filter: saturate(0.6);
+  cursor: not-allowed;
+}
+
+/* --------------------------------------------------------------------------
+   Reduced motion — kill choreography, keep the UI usable.
+   -------------------------------------------------------------------------- */
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.001ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.001ms !important;
+    scroll-behavior: auto !important;
+  }
 }
 
 /* Layout Utilities */
@@ -340,4 +484,3 @@ body {
 .gap-6 {
   gap: 1.5rem;
 }
-

@@ -1,353 +1,347 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useEffect, useId, useRef, useState } from 'react';
 import { X, Check, Plus } from 'lucide-react';
-
-const PRESET_THEMES = [
-  { name: 'Midnight Cobalt', class: 'theme-midnight-cobalt', style: { background: 'linear-gradient(135deg, #10162f 0%, #0b0d1a 100%)' } },
-  { name: 'Ethereal Dawn', class: 'theme-ethereal-dawn', style: { background: 'linear-gradient(135deg, #2b1e42 0%, #0d0c15 100%)' } },
-  { name: 'Forest Green', class: 'theme-forest-green', style: { background: 'linear-gradient(135deg, #0b2518 0%, #030805 100%)' } },
-  { name: 'Sunset Orange', class: 'theme-sunset-orange', style: { background: 'linear-gradient(135deg, #380e14 0%, #0c0204 100%)' } },
-  { name: 'Sand Solid', class: 'theme-sand-solid', style: { background: '#f5f2eb' } },
-  { name: 'Charcoal Solid', class: 'theme-charcoal-solid', style: { background: '#121412' } },
-];
-
-const PRESET_TAGS = ['philosophy', 'mindfulness', 'wisdom', 'life', 'science', 'art'];
+import { DEFAULT_QUOTE_THEME, PRESET_TAGS, QUOTE_THEMES } from '../design/quoteThemes';
 
 export default function AddFlow({ onSave, onCancel }) {
   const [text, setText] = useState('');
   const [author, setAuthor] = useState('');
   const [source, setSource] = useState('');
-  const [selectedTheme, setSelectedTheme] = useState(PRESET_THEMES[0]);
+  const [selectedTheme, setSelectedTheme] = useState(DEFAULT_QUOTE_THEME);
   const [tags, setTags] = useState([]);
   const [isAddingTag, setIsAddingTag] = useState(false);
   const [newTagInput, setNewTagInput] = useState('');
-  const textareaRef = useRef(null);
+  const [error, setError] = useState(null);
 
-  // Focus textarea on load
+  const textareaRef = useRef(null);
+  const tagInputRef = useRef(null);
+  const uid = useId();
+  const ids = {
+    quote: `${uid}-quote`,
+    author: `${uid}-author`,
+    source: `${uid}-source`,
+    tag: `${uid}-tag`,
+    error: `${uid}-error`,
+  };
+
   useEffect(() => {
-    if (textareaRef.current) {
-      textareaRef.current.focus();
-    }
-  }, []);
+    if (!isAddingTag) return;
+    tagInputRef.current?.focus();
+  }, [isAddingTag]);
 
   const handleSave = () => {
-    if (!text.trim()) return;
+    const cleanText = text.trim();
+    if (!cleanText) {
+      setError('Add the quote text before saving.');
+      textareaRef.current?.focus();
+      return;
+    }
+    setError(null);
     onSave({
-      text: text.trim(),
+      text: cleanText,
       author: author.trim() || 'Anonymous',
-      source: source.trim() || '',
+      source: source.trim(),
       theme: selectedTheme.name,
-      tags: tags
+      tags,
     });
   };
 
-  const handleToggleTag = (tag) => {
-    if (tags.includes(tag)) {
-      setTags(tags.filter(t => t !== tag));
-    } else {
-      setTags([...tags, tag]);
+  const handleKeyDown = (event) => {
+    if (event.key === 'Escape') {
+      event.stopPropagation();
+      onCancel();
     }
+    if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
+      event.preventDefault();
+      handleSave();
+    }
+  };
+
+  const handleToggleTag = (tag) => {
+    setTags((prev) => (prev.includes(tag) ? prev.filter((t) => t !== tag) : [...prev, tag]));
   };
 
   const handleAddCustomTag = (e) => {
     e.preventDefault();
-    const cleanTag = newTagInput.trim().toLowerCase();
+    const cleanTag = newTagInput.trim().toLowerCase().replace(/\s+/g, '-');
     if (cleanTag && !tags.includes(cleanTag)) {
-      setTags([...tags, cleanTag]);
-      setNewTagInput('');
-      setIsAddingTag(false);
+      setTags((prev) => [...prev, cleanTag]);
     }
+    setNewTagInput('');
+    setIsAddingTag(false);
   };
 
-  // Font sizing calculations
-  const getFontSize = () => {
-    const len = text.length;
-    if (len < 60) return { fontSize: '32px', fontWeight: '800', fontFamily: 'var(--font-quote)' };
-    if (len > 150) return { fontSize: '22px', fontWeight: '600', fontFamily: 'var(--font-quote)' };
-    return { fontSize: '28px', fontWeight: '700', fontFamily: 'var(--font-quote)' };
-  };
-
+  const quoteFontSize = text.length > 150 ? 22 : text.length > 60 ? 28 : 32;
 
   return (
-    <div 
+    <div
       className="flex-1 flex flex-col justify-between theme-charcoal-solid animate-slide-up"
-      style={{ 
-        height: '100%',
-        backgroundColor: '#121412',
-        color: '#e2e3df',
-        position: 'relative',
-        display: 'flex',
-        flexDirection: 'column'
-      }}
+      style={{ height: '100%', backgroundColor: '#121412', color: '#e2e3df' }}
+      onKeyDown={handleKeyDown}
     >
       {/* Top Header */}
-      <div 
-        style={{ 
+      <header
+        style={{
           marginTop: 'var(--spacing-safe-area-top)',
           paddingLeft: 'var(--spacing-edge-margin)',
           paddingRight: 'var(--spacing-edge-margin)',
           display: 'flex',
           justifyContent: 'space-between',
           alignItems: 'center',
-          height: 48,
-          borderBottom: '1px solid rgba(255, 255, 255, 0.05)'
+          gap: 8,
+          minHeight: 56,
+          borderBottom: 'var(--hairline) solid var(--chrome-border)'
         }}
       >
-        <button 
-          onClick={onCancel}
-          className="scale-press"
-          style={{ background: 'none', border: 'none', color: '#e2e3df', cursor: 'pointer', padding: 4 }}
-        >
-          <X size={24} />
+        <button type="button" onClick={onCancel} className="icon-btn icon-btn--sm icon-btn--plain" aria-label="Cancel and return to feed" style={{ color: 'var(--chrome-fg)' }}>
+          <X size={22} aria-hidden="true" />
         </button>
-        
-        <span className="label-caps" style={{ letterSpacing: '0.15em', fontWeight: 600 }}>ADD QUOTE</span>
-        
-        <button 
+
+        <h1 className="label-caps" style={{ letterSpacing: '0.15em' }}>
+          Add Quote
+        </h1>
+
+        <button
+          type="button"
           onClick={handleSave}
-          disabled={!text.trim()}
-          className="scale-press"
-          style={{ 
-            background: 'none', 
-            border: 'none', 
-            color: text.trim() ? '#ffffff' : 'rgba(255,255,255,0.2)', 
-            cursor: text.trim() ? 'pointer' : 'default', 
-            padding: 4 
-          }}
+          className="icon-btn icon-btn--sm icon-btn--plain"
+          aria-label="Save quote"
+          style={{ color: 'var(--chrome-fg)' }}
         >
-          <Check size={24} />
+          <Check size={22} aria-hidden="true" />
         </button>
-      </div>
+      </header>
 
       {/* Main Quote Input Section */}
-      <div 
-        style={{ 
-          flex: 1, 
-          display: 'flex', 
-          flexDirection: 'column', 
-          padding: 'var(--spacing-edge-margin)', 
+      <div
+        style={{
+          flex: 1,
+          display: 'flex',
+          flexDirection: 'column',
+          padding: 'var(--spacing-edge-margin)',
           overflowY: 'auto',
-          gap: 20
+          overscrollBehavior: 'contain',
+          gap: 16
         }}
       >
-        {/* Dynamic Tag Management */}
+        {/* Selected + custom tags */}
         <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, alignItems: 'center' }}>
-          {tags.map((tag, i) => (
-            <span 
-              key={i} 
+          {tags.map((tag) => (
+            <button
+              key={tag}
+              type="button"
               onClick={() => handleToggleTag(tag)}
-              className="label-caps scale-press"
-              style={{ 
-                padding: '4px 10px', 
-                borderRadius: 'var(--rounded-full)', 
-                border: '1px solid #ffffff',
-                backgroundColor: 'rgba(255,255,255,0.1)',
-                color: '#ffffff',
-                fontSize: 10,
-                cursor: 'pointer'
-              }}
+              aria-pressed="true"
+              className="chip"
             >
               #{tag.toUpperCase()}
-            </span>
+            </button>
           ))}
 
           {!isAddingTag ? (
             <button
+              type="button"
               onClick={() => setIsAddingTag(true)}
-              className="scale-press label-caps"
-              style={{
-                display: 'flex',
-                alignItems: 'center',
-                gap: 4,
-                padding: '4px 10px',
-                borderRadius: 'var(--rounded-full)',
-                border: '1px dashed rgba(255,255,255,0.3)',
-                background: 'none',
-                color: 'rgba(255,255,255,0.7)',
-                fontSize: 10,
-                cursor: 'pointer'
-              }}
+              className="chip"
+              style={{ borderStyle: 'dashed', background: 'none', color: 'var(--chrome-fg-muted)' }}
             >
-              <Plus size={10} /> TAG
+              <Plus size={10} aria-hidden="true" />
+              Tag
             </button>
           ) : (
-            <form onSubmit={handleAddCustomTag} style={{ display: 'flex', alignItems: 'center' }}>
+            <form onSubmit={handleAddCustomTag}>
+              <label className="sr-only" htmlFor={ids.tag}>
+                New tag name
+              </label>
               <input
+                id={ids.tag}
+                ref={tagInputRef}
                 type="text"
                 value={newTagInput}
                 onChange={(e) => setNewTagInput(e.target.value)}
-                placeholder="tag name..."
-                onBlur={() => {
-                  if(!newTagInput.trim()) setIsAddingTag(false);
-                }}
-                autoFocus
+                onBlur={() => setIsAddingTag(false)}
+                placeholder="tag name…"
+                autoComplete="off"
                 style={{
-                  background: 'rgba(255,255,255,0.05)',
-                  border: '1px solid rgba(255,255,255,0.2)',
+                  background: 'var(--chrome-surface-2)',
+                  border: 'var(--hairline) solid var(--chrome-border-strong)',
                   borderRadius: 'var(--rounded-full)',
-                  padding: '2px 8px',
-                  color: 'white',
+                  padding: '6px 12px',
+                  minHeight: 32,
+                  color: 'var(--chrome-fg)',
                   fontFamily: 'var(--font-label)',
-                  fontSize: 10,
-                  outline: 'none',
-                  width: 80
+                  fontSize: 11,
+                  width: 120
                 }}
               />
             </form>
           )}
         </div>
 
-        {/* Text Area Input for Quote */}
-        <textarea
-          ref={textareaRef}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          placeholder="Type your universal truth..."
-          style={{
-            ...getFontSize(),
-            width: '100%',
-            backgroundColor: 'transparent',
-            border: 'none',
-            outline: 'none',
-            color: '#ffffff',
-            resize: 'none',
-            minHeight: 180,
-            lineHeight: 1.25,
-            opacity: text ? 1 : 0.4,
-            paddingTop: 10
-          }}
-        />
-
-        {/* Inputs for Author & Source */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, marginTop: 20 }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: 8 }}>
-            <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', fontFamily: 'var(--font-attribution)' }}>Author</span>
-            <input
-              type="text"
-              value={author}
-              onChange={(e) => setAuthor(e.target.value)}
-              placeholder="Anonymous"
+        {/* Quote text */}
+        <div className="underline-field" style={{ flex: '1 1 auto', minHeight: 180 }}>
+          <label className="underline-field__label" htmlFor={ids.quote}>
+            Quote
+          </label>
+          <textarea
+            id={ids.quote}
+            ref={textareaRef}
+            name="quote"
+            value={text}
+            onChange={(e) => {
+              setText(e.target.value);
+              if (error) setError(null);
+            }}
+            placeholder="Type your universal truth…"
+            aria-describedby={error ? ids.error : undefined}
+            aria-invalid={error ? 'true' : undefined}
+            style={{
+              width: '100%',
+              minHeight: 180,
+              flex: '1 1 auto',
+              backgroundColor: 'transparent',
+              border: 'none',
+              color: 'var(--text-color, #ffffff)',
+              resize: 'none',
+              fontFamily: 'var(--font-quote)',
+              fontWeight: 'var(--quote-weight, 700)',
+              fontSize: `${quoteFontSize}px`,
+              lineHeight: 'var(--quote-leading, 1.3)',
+              letterSpacing: 'var(--quote-tracking, 0)',
+              opacity: text ? 1 : 0.6,
+              paddingTop: 8
+            }}
+          />
+          {error && (
+            <p
+              id={ids.error}
+              role="alert"
               style={{
-                background: 'transparent',
-                border: 'none',
-                color: 'white',
                 fontFamily: 'var(--font-attribution)',
-                fontSize: 14,
-                width: '100%',
-                outline: 'none'
+                fontSize: 13,
+                color: 'var(--danger-fg)',
+                paddingTop: 8
               }}
-            />
-          </div>
-
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12, borderBottom: '1px solid rgba(255, 255, 255, 0.1)', paddingBottom: 8 }}>
-            <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', fontFamily: 'var(--font-attribution)' }}>Source</span>
-            <input
-              type="text"
-              value={source}
-              onChange={(e) => setSource(e.target.value)}
-              placeholder="Book, speech, podcast (optional)"
-              style={{
-                background: 'transparent',
-                border: 'none',
-                color: 'white',
-                fontFamily: 'var(--font-attribution)',
-                fontSize: 14,
-                width: '100%',
-                outline: 'none'
-              }}
-            />
-          </div>
+            >
+              {error}
+            </p>
+          )}
         </div>
 
-        {/* Suggested presets tags */}
-        <div style={{ marginTop: 20 }}>
-          <p className="label-caps" style={{ color: 'rgba(255,255,255,0.4)', marginBottom: 10, fontSize: 10 }}>SUGGESTED TAGS</p>
+        {/* Attribution */}
+        <div className="underline-field">
+          <label className="underline-field__label" htmlFor={ids.author}>
+            Author
+          </label>
+          <input
+            id={ids.author}
+            className="underline-field__control"
+            type="text"
+            name="author"
+            value={author}
+            onChange={(e) => setAuthor(e.target.value)}
+            placeholder="Anonymous"
+            autoComplete="off"
+          />
+        </div>
+
+        <div className="underline-field">
+          <label className="underline-field__label" htmlFor={ids.source}>
+            Source
+          </label>
+          <input
+            id={ids.source}
+            className="underline-field__control"
+            type="text"
+            name="source"
+            value={source}
+            onChange={(e) => setSource(e.target.value)}
+            placeholder="Book, speech, podcast (optional)"
+            autoComplete="off"
+          />
+        </div>
+
+        {/* Suggested tags */}
+        <div>
+          <p className="underline-field__label" style={{ marginBottom: 10 }}>
+            Suggested Tags
+          </p>
           <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
-            {PRESET_TAGS.map((tag) => {
-              const active = tags.includes(tag);
-              return (
-                <button
-                  key={tag}
-                  type="button"
-                  onClick={() => handleToggleTag(tag)}
-                  className="scale-press label-caps"
-                  style={{
-                    padding: '6px 12px',
-                    borderRadius: 'var(--rounded-full)',
-                    background: active ? 'white' : 'rgba(255,255,255,0.05)',
-                    border: active ? '1px solid white' : '1px solid rgba(255,255,255,0.1)',
-                    color: active ? 'black' : 'rgba(255,255,255,0.7)',
-                    cursor: 'pointer',
-                    fontSize: 10
-                  }}
-                >
-                  {tag}
-                </button>
-              );
-            })}
+            {PRESET_TAGS.map((tag) => (
+              <button
+                key={tag}
+                type="button"
+                onClick={() => handleToggleTag(tag)}
+                aria-pressed={tags.includes(tag)}
+                className="chip"
+                style={{ textTransform: 'none', letterSpacing: '0.02em' }}
+              >
+                {tag}
+              </button>
+            ))}
           </div>
         </div>
       </div>
 
-      {/* Theme Selector (Sticky at Bottom) */}
-      <div 
-        style={{ 
-          padding: '20px var(--spacing-edge-margin)',
-          borderTop: '1px solid rgba(255, 255, 255, 0.05)',
-          background: '#0d0f0d'
+      {/* Card Color (sticky footer) */}
+      <div
+        style={{
+          padding: '18px var(--spacing-edge-margin)',
+          borderTop: 'var(--hairline) solid var(--chrome-border)',
+          background: 'var(--chrome-bg)'
         }}
       >
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 12 }}>
-          <span className="label-caps" style={{ color: 'rgba(255,255,255,0.5)', fontSize: 11 }}>SELECT THEME</span>
-          <span className="label-caps" style={{ color: '#white', fontSize: 10, opacity: 0.8 }}>{selectedTheme.name}</span>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 12, marginBottom: 12 }}>
+          <span className="label-caps" id="card-color-label" style={{ color: 'var(--chrome-fg-muted)', fontSize: 11 }}>
+            Card Color
+          </span>
+          <span className="label-caps" style={{ color: 'var(--accent-color)', fontSize: 10 }}>
+            {selectedTheme.name}
+          </span>
         </div>
-        
-        <div 
-          style={{ 
-            display: 'flex', 
-            gap: 12, 
-            overflowX: 'auto', 
-            paddingBottom: 4,
-            scrollSnapType: 'x mandatory'
-          }}
+
+        <div
+          role="group"
+          aria-labelledby="card-color-label"
+          style={{ display: 'flex', gap: 10, flexWrap: 'wrap' }}
         >
-          {PRESET_THEMES.map((theme) => {
-            const isSelected = selectedTheme.name === theme.name;
-            const innerPreviewText = theme.class.includes('sand') ? '#1e201e' : '#ffffff';
-            return (
-              <button
-                key={theme.name}
-                type="button"
-                onClick={() => setSelectedTheme(theme)}
-                className="scale-press"
+          {QUOTE_THEMES.map((themeOption) => (
+            <label
+              key={themeOption.name}
+              className="design-palette-card"
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                gap: 8,
+                minHeight: 0,
+                width: 'auto',
+                flexGrow: 1,
+                padding: '8px 10px'
+              }}
+            >
+              <input
+                type="radio"
+                name="tathya-card-color"
+                className="sr-only"
+                value={themeOption.name}
+                checked={selectedTheme.name === themeOption.name}
+                onChange={() => setSelectedTheme(themeOption)}
+              />
+              <span
+                aria-hidden="true"
                 style={{
-                  ...theme.style,
-                  width: 48,
-                  height: 48,
+                  width: 26,
+                  height: 26,
                   borderRadius: 'var(--rounded-full)',
-                  border: isSelected ? '2px solid white' : '2px solid transparent',
-                  cursor: 'pointer',
-                  flexShrink: 0,
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  boxShadow: isSelected ? '0 0 12px rgba(255,255,255,0.2)' : 'none',
-                  outline: 'none'
+                  background: themeOption.preview,
+                  border: 'var(--hairline) solid var(--chrome-border-strong)',
+                  flex: '0 0 auto'
                 }}
-              >
-                <span 
-                  style={{ 
-                    fontFamily: 'var(--font-quote)', 
-                    fontSize: 11, 
-                    fontWeight: 'bold', 
-                    color: innerPreviewText,
-                    opacity: 0.8
-                  }}
-                >
-                  Aa
-                </span>
-              </button>
-            );
-          })}
+              />
+              <span className="design-palette-card__name" style={{ fontSize: 10 }}>
+                {themeOption.name}
+              </span>
+            </label>
+          ))}
         </div>
       </div>
     </div>

@@ -12,6 +12,15 @@ dist
 dist-ssr
 *.local
 
+# Local secrets. The Unsplash access key is only ever read by
+# scripts/curate-photos.mjs — it is never bundled into the app.
+.env
+.env.*
+!.env.example
+
+# Raw Unsplash search responses, kept so re-curating is free.
+.unsplash-curation-cache.json
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json
@@ -24,3 +33,6 @@ dist-ssr
 *.sw?
 
 .vercel
+
+# Local source materials and working references
+references/

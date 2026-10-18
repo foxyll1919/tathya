@@ -1,0 +1,1274 @@
+/*
+ * Design system overlay — two orthogonal axes layered on top of the
+ * per-quote `.theme-*` colors defined in src/index.css.
+ *
+ *   [data-style]   typography + shape language (5 presets)
+ *   [data-palette] color (7 presets, one of which passes through)
+ *
+ * Both attributes are set on `.app-container` in src/App.jsx, so a palette
+ * (specificity 0,2,0) always beats a `.theme-*` class (0,1,0) while
+ * `per-quote` falls through to the theme untouched.
+ *
+ * Token *values* here are the source of truth for the running app. The
+ * export renderer cannot read custom properties, so the mirror used for
+ * SVG/PNG output lives in src/design/presets.js (`STYLES[*].export`).
+ * Keep the two in step when editing.
+ */
+
+/* ==========================================================================
+   1. Chrome tokens — every surface that floats above a quote card
+   ========================================================================== */
+
+.app-container {
+  --chrome-bg: #0d0f0d;
+  --chrome-surface: #161816;
+  --chrome-surface-2: rgba(255, 255, 255, 0.045);
+  --chrome-surface-3: rgba(255, 255, 255, 0.09);
+  --chrome-border: rgba(255, 255, 255, 0.11);
+  --chrome-border-strong: rgba(255, 255, 255, 0.2);
+  --chrome-fg: #ffffff;
+  --chrome-fg-muted: rgba(255, 255, 255, 0.74);
+  --chrome-scrim: rgba(4, 6, 4, 0.82);
+  --chrome-track: rgba(255, 255, 255, 0.26);
+  --danger-fg: #ff8a8a;
+  --danger-surface: rgba(255, 107, 107, 0.1);
+  --danger-border: rgba(255, 107, 107, 0.34);
+  --success-fg: #6ee7b7;
+
+  /* Shape defaults (overridden per style) */
+  --hairline: 1px;
+  --panel-radius: var(--rounded-lg);
+  --sheet-radius: var(--rounded-lg);
+  --shadow-panel: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  --shadow-card: 0 20px 40px -20px rgba(0, 0, 0, 0.6);
+  --panel-blur: blur(20px);
+  /* Mostly opaque so body copy behind a sheet never competes with its
+     labels; the blur is a finish, not a legibility crutch. */
+  --panel-fill: color-mix(in srgb, var(--chrome-surface) 95%, transparent);
+
+  /* Type defaults (overridden per style) */
+  --quote-size-display: 38px;
+  --quote-size-lg: 30px;
+  --quote-size-md: 22px;
+  --quote-size-scale-desktop: 1.1;
+  --quote-weight: 800;
+  --quote-weight-long: 600;
+  --quote-tracking: -0.03em;
+  --quote-leading: 1.15;
+  --quote-transform: none;
+  --quote-mark-opacity: 0.08;
+  --quote-mark-family: var(--font-quote);
+  --attribution-weight: 500;
+  --attribution-tracking: 0.06em;
+  --attribution-transform: uppercase;
+  --attribution-size: 14px;
+  --label-weight: 700;
+  --label-tracking: 0.05em;
+  --label-transform: uppercase;
+  --focus-ring-width: 2px;
+  --focus-ring-offset: 3px;
+  /*
+   * No --photo-* declarations here on purpose. The per-quote fallback
+   * lives on :root in styles/theme.css so that [data-theme='dawn'|'day']
+   * can override it — declaring them on .app-container would shadow the
+   * inherited time-of-day values and pin every surface to the dark set.
+   * Every consumer below uses var(--photo-x, <fallback>) instead.
+   */
+}
+
+/* ==========================================================================
+   2. Palettes
+   ========================================================================== */
+
+.app-container[data-palette='midnight-cobalt'] {
+  --on-accent: #050a1c;
+  background: linear-gradient(185deg, #10162f 0%, #0b0d1a 50%, #04050a 100%);
+  --text-color: #ffffff;
+  --subtext-color: rgba(255, 255, 255, 0.74);
+  --accent-color: #7aa2ff;
+  --accent-gradient: linear-gradient(135deg, #7aa2ff, #a5b4fc);
+  --outline-color: rgba(122, 162, 255, 0.34);
+  --chip-bg: rgba(122, 162, 255, 0.12);
+
+  --chrome-bg: #080b16;
+  --chrome-surface: #131a33;
+  --chrome-surface-2: rgba(255, 255, 255, 0.06);
+  --chrome-surface-3: rgba(255, 255, 255, 0.11);
+  --chrome-border: rgba(255, 255, 255, 0.13);
+  --chrome-border-strong: rgba(255, 255, 255, 0.24);
+}
+
+.app-container[data-palette='rose-noir'] {
+  --on-accent: #2a0207;
+  background: linear-gradient(185deg, #1a0b10 0%, #0e0508 50%, #050203 100%);
+  --text-color: #ffffff;
+  --subtext-color: rgba(255, 255, 255, 0.74);
+  --accent-color: #ff5d73;
+  --accent-gradient: linear-gradient(135deg, #ff5d73, #ffa8b4);
+  --outline-color: rgba(255, 93, 115, 0.34);
+  --chip-bg: rgba(255, 93, 115, 0.12);
+
+  --chrome-bg: #0a0406;
+  --chrome-surface: #1d0d13;
+  --chrome-surface-2: rgba(255, 255, 255, 0.06);
+  --chrome-surface-3: rgba(255, 255, 255, 0.11);
+  --chrome-border: rgba(255, 255, 255, 0.13);
+  --chrome-border-strong: rgba(255, 255, 255, 0.24);
+}
+
+.app-container[data-palette='orchid'] {
+  --on-accent: #160a26;
+  background: linear-gradient(185deg, #241542 0%, #150d29 50%, #080512 100%);
+  --text-color: #ffffff;
+  --subtext-color: rgba(255, 255, 255, 0.74);
+  --accent-color: #c9a6ff;
+  --accent-gradient: linear-gradient(135deg, #c9a6ff, #e9d5ff);
+  --outline-color: rgba(201, 166, 255, 0.34);
+  --chip-bg: rgba(201, 166, 255, 0.12);
+
+  --chrome-bg: #0c0618;
+  --chrome-surface: #221642;
+  --chrome-surface-2: rgba(255, 255, 255, 0.06);
+  --chrome-surface-3: rgba(255, 255, 255, 0.11);
+  --chrome-border: rgba(255, 255, 255, 0.13);
+  --chrome-border-strong: rgba(255, 255, 255, 0.24);
+}
+
+.app-container[data-palette='citrus'] {
+  --on-accent: #201404;
+  background: linear-gradient(185deg, #123024 0%, #0a1d16 50%, #040b08 100%);
+  --text-color: #ffffff;
+  --subtext-color: rgba(255, 255, 255, 0.74);
+  --accent-color: #ffc247;
+  --accent-gradient: linear-gradient(135deg, #ffc247, #ffe0a3);
+  --outline-color: rgba(255, 194, 71, 0.34);
+  --chip-bg: rgba(255, 194, 71, 0.12);
+
+  --chrome-bg: #061310;
+  --chrome-surface: #0f2019;
+  --chrome-surface-2: rgba(255, 255, 255, 0.06);
+  --chrome-surface-3: rgba(255, 255, 255, 0.11);
+  --chrome-border: rgba(255, 255, 255, 0.13);
+  --chrome-border-strong: rgba(255, 255, 255, 0.24);
+}
+
+.app-container[data-palette='moss'] {
+  --on-accent: #141b08;
+  background: linear-gradient(185deg, #1a2113 0%, #101408 50%, #060805 100%);
+  --text-color: #ffffff;
+  --subtext-color: rgba(255, 255, 255, 0.74);
+  --accent-color: #b6e36a;
+  --accent-gradient: linear-gradient(135deg, #b6e36a, #dcf7a6);
+  --outline-color: rgba(182, 227, 106, 0.34);
+  --chip-bg: rgba(182, 227, 106, 0.12);
+
+  --chrome-bg: #080c05;
+  --chrome-surface: #161c10;
+  --chrome-surface-2: rgba(255, 255, 255, 0.06);
+  --chrome-surface-3: rgba(255, 255, 255, 0.11);
+  --chrome-border: rgba(255, 255, 255, 0.13);
+  --chrome-border-strong: rgba(255, 255, 255, 0.24);
+}
+
+/* Light palette — the only one that inverts the chrome. */
+.app-container[data-palette='paper'] {
+  --on-accent: #fdf6f0;
+  background: linear-gradient(180deg, #f8f5ee 0%, #eee8da 100%);
+  --text-color: #1b1a16;
+  --subtext-color: rgba(27, 26, 22, 0.76);
+  --accent-color: #8a3324;
+  --accent-gradient: linear-gradient(135deg, #8a3324, #b4553c);
+  --outline-color: rgba(27, 26, 22, 0.3);
+  --chip-bg: rgba(27, 26, 22, 0.06);
+
+  --chrome-bg: #e6dfcd;
+  --chrome-surface: #fbf8f1;
+  --chrome-surface-2: rgba(27, 26, 22, 0.05);
+  --chrome-surface-3: rgba(27, 26, 22, 0.1);
+  --chrome-border: rgba(27, 26, 22, 0.16);
+  --chrome-border-strong: rgba(27, 26, 22, 0.3);
+  --chrome-fg: #1b1a16;
+  --chrome-fg-muted: rgba(27, 26, 22, 0.78);
+  --chrome-scrim: rgba(38, 32, 20, 0.6);
+  --chrome-track: rgba(27, 26, 22, 0.22);
+  --danger-fg: #8c1d18;
+  --danger-surface: rgba(140, 29, 24, 0.08);
+  --danger-border: rgba(140, 29, 24, 0.28);
+  --success-fg: #1c6b46;
+  --shadow-panel: 0 8px 28px rgba(58, 48, 30, 0.16);
+  --shadow-card: 0 18px 36px -20px rgba(58, 48, 30, 0.45);
+}
+
+/* ==========================================================================
+   2b. Photo backdrop tints — one block per palette
+   Kept separate from the palette surface blocks above so the photo
+   concern stays in one place. The scrim gradient is what guarantees the
+   4.5:1 text contrast on top of the image; the tint pulls the photo
+   toward the palette instead of letting it fight the accent.
+   ========================================================================== */
+
+.app-container[data-palette='midnight-cobalt'] {
+  --photo-tint: #0b1024;
+  --photo-tint-opacity: 0.28;
+  --photo-tint-blend: multiply;
+  --photo-scrim-from: rgba(6, 9, 20, 0.44);
+  --photo-scrim-to: rgba(4, 6, 14, 0.78);
+}
+
+.app-container[data-palette='rose-noir'] {
+  --photo-tint: #150609;
+  --photo-tint-opacity: 0.28;
+  --photo-tint-blend: multiply;
+  --photo-scrim-from: rgba(16, 6, 9, 0.44);
+  --photo-scrim-to: rgba(6, 2, 3, 0.78);
+}
+
+.app-container[data-palette='orchid'] {
+  --photo-tint: #1a0b2c;
+  --photo-tint-opacity: 0.28;
+  --photo-tint-blend: multiply;
+  --photo-scrim-from: rgba(16, 8, 28, 0.44);
+  --photo-scrim-to: rgba(8, 5, 18, 0.78);
+}
+
+.app-container[data-palette='citrus'] {
+  --photo-tint: #0a2118;
+  --photo-tint-opacity: 0.28;
+  --photo-tint-blend: multiply;
+  --photo-scrim-from: rgba(8, 24, 18, 0.44);
+  --photo-scrim-to: rgba(4, 11, 8, 0.78);
+}
+
+.app-container[data-palette='moss'] {
+  --photo-tint: #121a08;
+  --photo-tint-opacity: 0.28;
+  --photo-tint-blend: multiply;
+  --photo-scrim-from: rgba(14, 20, 8, 0.44);
+  --photo-scrim-to: rgba(6, 8, 5, 0.78);
+}
+
+.app-container[data-palette='paper'] {
+  --photo-tint: #efe7d6;
+  --photo-tint-opacity: 0.28;
+  --photo-tint-blend: multiply;
+  --photo-scrim-from: rgba(250, 247, 240, 0.45);
+  --photo-scrim-to: rgba(243, 238, 226, 0.82);
+}
+
+/* ==========================================================================
+   3. Styles — typography + shape
+   ========================================================================== */
+
+.app-container[data-style='brutalism'] {
+  --font-quote: 'Space Mono', ui-monospace, 'SFMono-Regular', monospace;
+  --font-attribution: 'Space Mono', ui-monospace, 'SFMono-Regular', monospace;
+  --font-label: 'Space Mono', ui-monospace, 'SFMono-Regular', monospace;
+
+  --rounded-sm: 0;
+  --rounded-default: 0;
+  --rounded-md: 0;
+  --rounded-lg: 0;
+  --rounded-xl: 0;
+  --rounded-full: 0;
+
+  --quote-size-display: 32px;
+  --quote-size-lg: 26px;
+  --quote-size-md: 20px;
+  --quote-size-scale-desktop: 1.12;
+  --quote-weight: 700;
+  --quote-weight-long: 400;
+  --quote-tracking: -0.03em;
+  --quote-leading: 1.32;
+  --quote-transform: none;
+  --quote-mark-opacity: 0.28;
+  --attribution-weight: 700;
+  --attribution-tracking: 0.18em;
+  --attribution-transform: uppercase;
+  --attribution-size: 13px;
+  --label-weight: 700;
+  --label-tracking: 0.12em;
+
+  --hairline: 2px;
+  --shadow-panel: 8px 8px 0 0 var(--chrome-fg);
+  --shadow-card: 6px 6px 0 0 rgba(255, 255, 255, 0.85);
+  --panel-blur: none;
+  --photo-opacity: 0.92;
+  --photo-blur: 0px;
+  --photo-saturate: 0.12;
+  --photo-contrast: 1.45;
+  --photo-brightness: 0.85;
+  --photo-grain-opacity: 0.07;
+  --photo-scale: 1.04;
+  --panel-fill: var(--chrome-surface);
+}
+
+.app-container[data-style='gothic'] {
+  --font-quote: 'UnifrakturMaguntia', 'Cinzel', serif;
+  --font-attribution: 'Cinzel', Georgia, serif;
+  --font-label: 'Cinzel', Georgia, serif;
+
+  --rounded-sm: 0;
+  --rounded-default: 2px;
+  --rounded-md: 3px;
+  --rounded-lg: 4px;
+  --rounded-xl: 6px;
+  --rounded-full: 9999px;
+
+  --quote-size-display: 40px;
+  --quote-size-lg: 32px;
+  --quote-size-md: 24px;
+  --quote-size-scale-desktop: 1.14;
+  --quote-weight: 400;
+  --quote-weight-long: 400;
+  --quote-tracking: 0.01em;
+  --quote-leading: 1.4;
+  --quote-transform: none;
+  --quote-mark-opacity: 0.18;
+  --attribution-weight: 600;
+  --attribution-tracking: 0.2em;
+  --attribution-transform: uppercase;
+  --attribution-size: 12px;
+  --label-weight: 600;
+  --label-tracking: 0.18em;
+
+  --hairline: 1px;
+  --shadow-panel: 0 18px 50px -22px rgba(0, 0, 0, 0.85);
+  --shadow-card: 0 22px 48px -24px rgba(0, 0, 0, 0.9);
+  --panel-blur: blur(14px);
+  --photo-opacity: 0.74;
+  --photo-blur: 0px;
+  --photo-saturate: 0.55;
+  --photo-contrast: 1.2;
+  --photo-brightness: 0.98;
+  --photo-grain-opacity: 0.05;
+  --photo-scale: 1.06;
+}
+
+.app-container[data-style='mid-century'] {
+  --font-quote: 'Jost', 'Futura', sans-serif;
+  --font-attribution: 'Jost', 'Futura', sans-serif;
+  --font-label: 'Space Grotesk', 'Jost', sans-serif;
+
+  --rounded-sm: 6px;
+  --rounded-default: 12px;
+  --rounded-md: 16px;
+  --rounded-lg: 20px;
+  --rounded-xl: 9999px;
+  --rounded-full: 9999px;
+
+  --quote-size-display: 42px;
+  --quote-size-lg: 33px;
+  --quote-size-md: 24px;
+  --quote-size-scale-desktop: 1.12;
+  --quote-weight: 600;
+  --quote-weight-long: 400;
+  --quote-tracking: -0.01em;
+  --quote-leading: 1.28;
+  --quote-transform: none;
+  --quote-mark-opacity: 0.1;
+  --attribution-weight: 500;
+  --attribution-tracking: 0.22em;
+  --attribution-transform: uppercase;
+  --attribution-size: 13px;
+  --label-weight: 700;
+  --label-tracking: 0.14em;
+
+  --hairline: 1px;
+  --shadow-panel: 0 12px 30px -14px rgba(0, 0, 0, 0.6);
+  --shadow-card: 0 24px 40px -22px rgba(0, 0, 0, 0.6);
+  --panel-blur: blur(18px);
+  --photo-opacity: 0.78;
+  --photo-blur: 0px;
+  --photo-saturate: 1.15;
+  --photo-contrast: 1.12;
+  --photo-brightness: 0.92;
+  --photo-grain-opacity: 0;
+  --photo-scale: 1.02;
+}
+
+.app-container[data-style='bohemian'] {
+  --font-quote: 'Marcellus', 'Cormorant Garamond', Georgia, serif;
+  --font-attribution: 'Manrope', sans-serif;
+  --font-label: 'Manrope', sans-serif;
+
+  --rounded-sm: 12px;
+  --rounded-default: 22px;
+  --rounded-md: 34px 34px 12px 34px;
+  --rounded-lg: 44px;
+  --rounded-xl: 56px;
+  --rounded-full: 9999px;
+
+  --quote-size-display: 38px;
+  --quote-size-lg: 30px;
+  --quote-size-md: 23px;
+  --quote-size-scale-desktop: 1.1;
+  --quote-weight: 400;
+  --quote-weight-long: 400;
+  --quote-tracking: 0.005em;
+  --quote-leading: 1.42;
+  --quote-transform: none;
+  --quote-mark-opacity: 0.14;
+  --attribution-weight: 500;
+  --attribution-tracking: 0.06em;
+  --attribution-transform: none;
+  --attribution-size: 14px;
+  --label-weight: 700;
+  --label-tracking: 0.16em;
+
+  --hairline: 1px;
+  --shadow-panel: 0 24px 48px -24px rgba(0, 0, 0, 0.62);
+  --shadow-card: 0 28px 52px -24px rgba(0, 0, 0, 0.6);
+  --panel-blur: blur(22px);
+  --photo-opacity: 0.66;
+  --photo-blur: 0.4px;
+  --photo-saturate: 0.92;
+  --photo-contrast: 1.02;
+  --photo-brightness: 0.86;
+  --photo-grain-opacity: 0.11;
+  --photo-scale: 1.03;
+}
+
+.app-container[data-style='ethereal'] {
+  --font-quote: 'Cormorant Garamond', 'Syne', Georgia, serif;
+  --font-attribution: 'Manrope', sans-serif;
+  --font-label: 'Space Grotesk', sans-serif;
+
+  --rounded-sm: 14px;
+  --rounded-default: 22px;
+  --rounded-md: 30px;
+  --rounded-lg: 40px;
+  --rounded-xl: 52px;
+  --rounded-full: 9999px;
+
+  --quote-size-display: 44px;
+  --quote-size-lg: 34px;
+  --quote-size-md: 25px;
+  --quote-size-scale-desktop: 1.08;
+  --quote-weight: 500;
+  --quote-weight-long: 400;
+  --quote-tracking: 0.004em;
+  --quote-leading: 1.34;
+  --quote-transform: none;
+  --quote-mark-opacity: 0.12;
+  --attribution-weight: 600;
+  --attribution-tracking: 0.08em;
+  --attribution-transform: none;
+  --attribution-size: 15px;
+  --label-weight: 700;
+  --label-tracking: 0.1em;
+
+  --hairline: 1px;
+  --shadow-panel: 0 24px 60px -22px rgba(0, 0, 0, 0.6);
+  --shadow-card: 0 30px 60px -26px rgba(0, 0, 0, 0.55);
+  --panel-blur: blur(26px);
+  --photo-opacity: 0.46;
+  --photo-blur: 2px;
+  --photo-saturate: 0.85;
+  --photo-contrast: 0.96;
+  --photo-brightness: 1.02;
+  --photo-grain-opacity: 0.04;
+  --photo-scale: 1.08;
+}
+
+/* ==========================================================================
+   3b. Photo backdrop layer
+   Stack order (all inside .photo-layer):
+     <img>  ->  tint (multiply/screen)  ->  scrim  ->  grain
+   The scrim is what buys text contrast; the tint is what stops the photo
+   fighting the palette. Neither is decorative.
+   ========================================================================== */
+
+.photo-layer {
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  overflow: hidden;
+  pointer-events: none;
+  /* A stacking context so the blend modes below cannot reach past the
+     photo layer into the quote text. */
+  isolation: isolate;
+  contain: strict;
+}
+
+/* Dominant-colour placeholder. Swaps to the photo once it decodes, so
+   there is never a flash of empty background and never a layout shift. */
+.photo-layer__base {
+  position: absolute;
+  inset: 0;
+  background: var(--photo-placeholder, #121412);
+  transition: opacity 0.4s ease;
+}
+
+.photo-layer__img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: var(--photo-focal, center);
+  opacity: var(--photo-opacity, 0.46);
+  filter: saturate(var(--photo-saturate, 0.85))
+    contrast(var(--photo-contrast, 0.96))
+    brightness(var(--photo-brightness, 1.02))
+    blur(var(--photo-blur, 2px));
+  transform: scale(var(--photo-scale, 1.08));
+  transition: opacity 0.45s ease;
+}
+
+.photo-layer__img[data-loaded='false'] {
+  opacity: 0;
+}
+
+.photo-layer__tint {
+  position: absolute;
+  inset: 0;
+  background: var(--photo-tint, #05070a);
+  mix-blend-mode: var(--photo-tint-blend, multiply);
+  opacity: var(--photo-tint-opacity, 0.28);
+}
+
+/* Scrim shape: the top 14% stays light so the photo reads, then ramps
+   hard to full by 42% — above where the vertically-centred quote block
+   can begin. This ramp IS the contrast guarantee, not a stylistic wash;
+   the light palettes need it because a translucent light scrim over a
+   black photo collapses into the mid-tones where nothing is readable. */
+.photo-layer__scrim {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(
+    180deg,
+    var(--photo-scrim-from, rgba(8, 10, 12, 0.42)) 0%,
+    var(--photo-scrim-from, rgba(8, 10, 12, 0.42)) 14%,
+    var(--photo-scrim-to, rgba(8, 10, 12, 0.93)) 42%,
+    var(--photo-scrim-to, rgba(8, 10, 12, 0.93)) 100%
+  );
+}
+
+/* Fractal-noise film grain. Tiled 160px SVG so the data URI stays small;
+   the turbulence has no baseFrequency scaling cost at this tile size. */
+.photo-layer__grain {
+  position: absolute;
+  inset: -20%;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='160' height='160' filter='url(%23n)' opacity='1'/%3E%3C/svg%3E");
+  opacity: var(--photo-grain-opacity, 0.04);
+  mix-blend-mode: overlay;
+  will-change: opacity;
+}
+
+/* Attribution required by the Unsplash API guidelines. iOS-wallscreen
+   style: present but visually quiet. */
+.photo-credit {
+  position: absolute;
+  left: var(--spacing-edge-margin);
+  right: var(--spacing-edge-margin);
+  bottom: calc(var(--spacing-safe-area-bottom) + 66px);
+  z-index: 30;
+  font-family: var(--font-attribution);
+  font-size: 10px;
+  line-height: 1.4;
+  color: var(--text-color);
+  opacity: 0.62;
+  text-align: left;
+  pointer-events: none;
+}
+
+.photo-credit a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+  pointer-events: auto;
+}
+
+/* Keyboard users must still reach the credit, so it becomes a real focus
+   target rather than a permanently ignored decoration. */
+.photo-credit:focus-within {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* ==========================================================================
+   4. Shared primitives used by the sheets, drawers and panel
+   ========================================================================== */
+
+/* Frosted surface. Brutalism opts out of blur via --panel-blur. */
+.sheet-surface {
+  background: var(--panel-fill);
+  backdrop-filter: var(--panel-blur);
+  -webkit-backdrop-filter: var(--panel-blur);
+  border: var(--hairline) solid var(--chrome-border);
+  box-shadow: var(--shadow-panel);
+  border-radius: var(--sheet-radius);
+  color: var(--chrome-fg);
+}
+
+/* Square-ish under brutalism: bottom sheets get no rounding at all. */
+.app-container[data-style='brutalism'] .sheet-surface {
+  border-bottom-left-radius: 0;
+  border-bottom-right-radius: 0;
+}
+
+.sheet-handle {
+  width: 44px;
+  height: 4px;
+  border-radius: var(--rounded-full);
+  background: var(--chrome-border-strong);
+  flex: 0 0 auto;
+}
+
+/* Icon button — 48px hit area, always ≥44px, explicit focus ring. */
+.icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 48px;
+  min-height: 48px;
+  padding: 0;
+  border: var(--hairline) solid var(--chrome-border);
+  border-radius: var(--rounded-full);
+  background: var(--chrome-surface-3);
+  color: var(--chrome-fg);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background-color 0.18s ease, border-color 0.18s ease,
+    transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.icon-btn:hover:not(:disabled) {
+  background: var(--chrome-border);
+}
+
+.icon-btn:active:not(:disabled) {
+  transform: scale(0.94);
+}
+
+.icon-btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* 44px variant for dense header rows — still at the touch-target floor. */
+.icon-btn--sm {
+  min-width: 44px;
+  min-height: 44px;
+}
+
+.icon-btn--plain {
+  background: transparent;
+  border-color: transparent;
+}
+
+/* Non-interactive chip (read-only tag on a card). */
+.chip--static {
+  cursor: default;
+}
+
+.chip--static:hover {
+  border-color: var(--outline-color);
+}
+
+/* Full-width row used inside drawers and the design panel. */
+.chrome-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 52px;
+  padding: 12px 16px;
+  border: var(--hairline) solid var(--chrome-border);
+  border-radius: var(--rounded-default);
+  background: var(--chrome-surface-2);
+  color: var(--chrome-fg);
+  font-family: var(--font-label);
+  font-size: 14px;
+  font-weight: 500;
+  text-align: left;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background-color 0.18s ease, border-color 0.18s ease,
+    color 0.18s ease, transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.chrome-row:hover:not(:disabled) {
+  background: var(--chrome-surface-3);
+}
+
+.chrome-row:active:not(:disabled) {
+  transform: scale(0.985);
+}
+
+.chrome-row--danger {
+  color: var(--danger-fg);
+  background: var(--danger-surface);
+  border-color: var(--danger-border);
+}
+
+.chrome-row--danger:hover:not(:disabled) {
+  background: var(--danger-border);
+}
+
+.chrome-row:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+/* Ghost button — tertiary actions that should not read as primary. */
+.chrome-ghost {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 44px;
+  padding: 8px 14px;
+  border: none;
+  border-radius: var(--rounded-default);
+  background: none;
+  color: var(--chrome-fg-muted);
+  font-family: var(--font-label);
+  font-size: 11px;
+  font-weight: var(--label-weight);
+  letter-spacing: var(--label-tracking);
+  text-transform: var(--label-transform);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: color 0.18s ease, transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.chrome-ghost:hover {
+  color: var(--chrome-fg);
+}
+
+.chrome-ghost:active {
+  transform: scale(0.96);
+}
+
+/* Primary CTA — one per screen. */
+.chrome-primary {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 48px;
+  padding: 12px 20px;
+  border: var(--hairline) solid transparent;
+  border-radius: var(--rounded-xl);
+  background: var(--accent-color);
+  color: var(--on-accent, var(--chrome-bg));
+  font-family: var(--font-label);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: filter 0.18s ease, transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.chrome-primary:hover:not(:disabled) {
+  filter: brightness(1.08);
+}
+
+.chrome-primary:active:not(:disabled) {
+  transform: scale(0.97);
+}
+
+.chrome-primary:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+/* Pill chip — tags, filters. */
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 28px;
+  padding: 4px 12px;
+  border: var(--hairline) solid var(--outline-color);
+  border-radius: var(--rounded-full);
+  background: var(--chip-bg);
+  color: var(--text-color);
+  font-family: var(--font-label);
+  font-size: 10px;
+  font-weight: var(--label-weight);
+  letter-spacing: var(--label-tracking);
+  text-transform: var(--label-transform);
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background-color 0.18s ease, color 0.18s ease,
+    border-color 0.18s ease, transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.chip:hover {
+  border-color: var(--accent-color);
+}
+
+.chip:active {
+  transform: scale(0.95);
+}
+
+.chip[aria-pressed='true'],
+.chip[aria-checked='true'] {
+  background: var(--accent-color);
+  border-color: var(--accent-color);
+  color: var(--on-accent, var(--chrome-bg));
+}
+
+/* Underline-only text input, used across the add flow. */
+.underline-field {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.underline-field__label {
+  font-family: var(--font-label);
+  font-size: 10px;
+  font-weight: var(--label-weight);
+  letter-spacing: var(--label-tracking);
+  text-transform: var(--label-transform);
+  color: var(--chrome-fg-muted);
+}
+
+.underline-field__control {
+  width: 100%;
+  min-height: 44px;
+  padding: 8px 0;
+  border: none;
+  border-bottom: var(--hairline) solid var(--chrome-border);
+  border-radius: 0;
+  background: transparent;
+  color: var(--chrome-fg);
+  font-family: var(--font-attribution);
+  font-size: 15px;
+}
+
+.underline-field__control::placeholder {
+  color: var(--chrome-fg-muted);
+  opacity: 0.8;
+}
+
+/* ==========================================================================
+   5. Modal surfaces
+   ========================================================================== */
+
+.sheet-root {
+  position: absolute;
+  inset: 0;
+  display: flex;
+}
+
+.sheet-root--bottom {
+  align-items: flex-end;
+  justify-content: center;
+}
+
+.sheet-root--rail {
+  align-items: stretch;
+  justify-content: flex-end;
+}
+
+.sheet-root--center {
+  align-items: center;
+  justify-content: center;
+  padding: var(--spacing-edge-margin);
+}
+
+.sheet-scrim {
+  position: absolute;
+  inset: 0;
+  background: var(--chrome-scrim);
+  animation: fadeIn 0.2s ease-out;
+}
+
+.sheet-panel {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  color: var(--chrome-fg);
+  overscroll-behavior: contain;
+}
+
+/* Bottom action sheet — the mobile default for every overlay. */
+.sheet-root--bottom .sheet-panel {
+  width: 100%;
+  max-height: 92dvh;
+  padding: 12px var(--spacing-edge-margin) calc(var(--spacing-safe-area-bottom) + 8px);
+  border-radius: var(--sheet-radius) var(--sheet-radius) 0 0;
+  border-bottom: none;
+  overflow-y: auto;
+  animation: slideUp 0.34s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Right-hand rail from 900px up; a bottom sheet below that. */
+.sheet-root--rail .sheet-panel {
+  width: 100%;
+  max-height: 92dvh;
+  margin-top: auto;
+  padding: 16px var(--spacing-edge-margin) calc(var(--spacing-safe-area-bottom) + 8px);
+  border-radius: var(--sheet-radius) var(--sheet-radius) 0 0;
+  border-bottom: none;
+  overflow-y: auto;
+  animation: slideUp 0.34s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@media (min-width: 900px) {
+  .sheet-root--rail .sheet-panel {
+    width: auto;
+    max-width: 384px;
+    max-height: 100%;
+    margin: 0;
+    padding: 20px var(--spacing-edge-margin) calc(var(--spacing-safe-area-bottom) + 20px);
+    border-radius: 0;
+    border-right: none;
+    border-top: none;
+    border-bottom: none;
+    animation: slideInRight 0.34s cubic-bezier(0.16, 1, 0.3, 1);
+  }
+}
+
+@keyframes slideInRight {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: translateX(0);
+  }
+}
+
+/* Centred confirmation dialog. */
+.sheet-root--center .sheet-panel {
+  width: 100%;
+  max-width: 400px;
+  gap: 8px;
+  padding: 24px;
+  border-radius: var(--rounded-md);
+  animation: scaleIn 0.28s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.sheet-panel__handle {
+  margin: 0 auto 12px;
+}
+
+.sheet-panel__title {
+  font-family: var(--font-label);
+  font-size: 13px;
+  font-weight: var(--label-weight);
+  letter-spacing: var(--label-tracking);
+  text-transform: var(--label-transform);
+  color: var(--chrome-fg);
+}
+
+.sheet-panel__body {
+  font-family: var(--font-attribution);
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--chrome-fg-muted);
+}
+
+.sheet-panel__actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 20px;
+}
+
+.sheet-panel__actions > * {
+  flex: 1;
+}
+
+/* ==========================================================================
+   6. Design panel
+   ========================================================================== */
+
+.design-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 12px;
+  border-bottom: var(--hairline) solid var(--chrome-border);
+}
+
+.design-panel__title {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.design-panel__heading {
+  font-family: var(--font-label);
+  font-size: 13px;
+  font-weight: var(--label-weight);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--chrome-fg);
+}
+
+.design-panel__sub {
+  font-family: var(--font-attribution);
+  font-size: 12px;
+  color: var(--chrome-fg-muted);
+}
+
+.design-group {
+  padding: 20px 0 4px;
+  border-bottom: var(--hairline) solid var(--chrome-border);
+}
+
+.design-group:last-of-type {
+  border-bottom: none;
+}
+
+.design-group__legend {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  margin-bottom: 12px;
+  text-align: left;
+}
+
+.design-group__name {
+  font-family: var(--font-label);
+  font-size: 11px;
+  font-weight: var(--label-weight);
+  letter-spacing: var(--label-tracking);
+  text-transform: var(--label-transform);
+  color: var(--chrome-fg-muted);
+}
+
+.design-group__value {
+  font-family: var(--font-label);
+  font-size: 11px;
+  font-weight: var(--label-weight);
+  letter-spacing: var(--label-tracking);
+  text-transform: var(--label-transform);
+  color: var(--accent-color);
+  text-align: right;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.design-style-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 8px;
+}
+
+.design-style-card {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  min-height: 88px;
+  padding: 12px 14px;
+  border: var(--hairline) solid var(--chrome-border);
+  border-radius: var(--rounded-default);
+  background: var(--chrome-surface-2);
+  color: var(--chrome-fg);
+  text-align: left;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background-color 0.18s ease, border-color 0.18s ease,
+    box-shadow 0.18s ease, transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.design-style-card:hover {
+  border-color: var(--chrome-border-strong);
+  background: var(--chrome-surface-3);
+}
+
+.design-style-card:active {
+  transform: scale(0.98);
+}
+
+.design-style-card:has(input:checked) {
+  border-color: var(--accent-color);
+  background: var(--chrome-surface-3);
+  box-shadow: inset 0 0 0 1px var(--accent-color);
+}
+
+.design-style-card:has(input:focus-visible),
+.design-palette-card:has(input:focus-visible) {
+  outline: var(--focus-ring-width, 2px) solid var(--accent-color);
+  outline-offset: var(--focus-ring-offset, 3px);
+}
+
+.design-style-card__specimen {
+  font-family: var(--specimen-font, var(--font-quote));
+  font-size: 30px;
+  line-height: 1;
+  font-weight: var(--specimen-weight, 500);
+  color: var(--chrome-fg);
+  letter-spacing: var(--specimen-tracking, 0);
+}
+
+.design-style-card__name {
+  font-family: var(--font-label);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--chrome-fg);
+}
+
+.design-style-card__hint {
+  font-family: var(--font-attribution);
+  font-size: 11px;
+  line-height: 1.35;
+  color: var(--chrome-fg-muted);
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  line-clamp: 2;
+  -webkit-box-orient: vertical;
+}
+
+.design-palette-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(104px, 1fr));
+  gap: 8px;
+}
+
+.design-palette-card {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-height: 76px;
+  padding: 10px 12px;
+  border: var(--hairline) solid var(--chrome-border);
+  border-radius: var(--rounded-default);
+  background: var(--chrome-surface-2);
+  color: var(--chrome-fg);
+  text-align: left;
+  cursor: pointer;
+  touch-action: manipulation;
+  transition: background-color 0.18s ease, border-color 0.18s ease,
+    box-shadow 0.18s ease, transform 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.design-palette-card:hover {
+  border-color: var(--chrome-border-strong);
+  background: var(--chrome-surface-3);
+}
+
+.design-palette-card:active {
+  transform: scale(0.98);
+}
+
+.design-palette-card:has(input:checked) {
+  border-color: var(--accent-color);
+  box-shadow: inset 0 0 0 1px var(--accent-color);
+}
+
+.design-palette-card__swatches {
+  display: flex;
+  gap: 4px;
+}
+
+.design-palette-card__dot {
+  width: 18px;
+  height: 18px;
+  border-radius: var(--rounded-full);
+  border: var(--hairline) solid rgba(0, 0, 0, 0.28);
+  flex: 0 0 auto;
+}
+
+.design-palette-card__name {
+  font-family: var(--font-label);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: var(--chrome-fg);
+}
+
+.design-panel__footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-top: 16px;
+}
+
+/* Backdrop picker strip in the design panel */
+.photo-strip {
+  list-style: none;
+  display: flex;
+  gap: 8px;
+  padding: 0;
+  overflow-x: auto;
+  scroll-snap-type: x proximity;
+}
+
+.photo-chip {
+  display: block;
+  flex: 0 0 auto;
+  width: 64px;
+  height: 44px;
+  border: var(--hairline) solid var(--chrome-border);
+  border-radius: var(--rounded-sm);
+  overflow: hidden;
+  cursor: pointer;
+  scroll-snap-align: start;
+  transition: border-color 0.18s ease, box-shadow 0.18s ease;
+}
+
+.photo-chip:hover {
+  border-color: var(--chrome-border-strong);
+}
+
+.photo-chip:has(input:checked) {
+  border-color: var(--accent-color);
+  box-shadow: 0 0 0 1px var(--accent-color);
+}
+
+.photo-chip:has(input:focus-visible) {
+  outline: var(--focus-ring-width, 2px) solid var(--accent-color);
+  outline-offset: var(--focus-ring-offset, 3px);
+}
+
+.photo-chip img {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+/* Screen-reader-only helper text and the skip link. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.skip-link {
+  position: absolute;
+  top: 8px;
+  left: 8px;
+  z-index: 200;
+  padding: 10px 16px;
+  border-radius: var(--rounded-default);
+  background: var(--chrome-fg);
+  color: var(--chrome-bg);
+  font-family: var(--font-label);
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  text-decoration: none;
+  transform: translateY(-200%);
+  transition: transform 0.16s ease;
+}
+
+.skip-link:focus-visible {
+  transform: translateY(0);
+}

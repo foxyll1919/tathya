@@ -1,10 +1,16 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import FeedView from './components/FeedView';
 import AddFlow from './components/AddFlow';
 import SuccessView from './components/SuccessView';
 import ShareSheet from './components/ShareSheet';
+import DesignPanel from './components/DesignPanel';
+import OptionsSheet from './components/OptionsSheet';
+import ConfirmDialog from './components/ConfirmDialog';
+import PhotoBackdrop from './components/PhotoBackdrop';
 import { useTimeTheme } from './hooks/useTimeTheme';
-import { Heart, Trash2, Share2, ArrowDown } from 'lucide-react';
+import { useDesign } from './hooks/useDesign';
+import { poolFor, resolveBackdrop, surfaceTone, tintFor } from './design/photoPresets';
+import { effectiveCardColors } from './utils/cardExport/cardColors';
 
 const DEFAULT_QUOTES = [
   {
@@ -47,6 +53,18 @@ const DEFAULT_QUOTES = [
 
 export default function App() {
   const { theme } = useTimeTheme();
+  const {
+    style,
+    palette,
+    photoMode,
+    photoId,
+    setStyle,
+    setPalette,
+    setPhotoMode,
+    setPhotoId,
+    cyclePhoto,
+    resetDesign,
+  } = useDesign();
 
   const [quotes, setQuotes] = useState(() => {
     const saved = localStorage.getItem('tathya_wisdom_quotes');
@@ -58,10 +76,12 @@ export default function App() {
   const [favoritesOnly, setFavoritesOnly] = useState(false);
   const [savedQuotePreview, setSavedQuotePreview] = useState(null);
 
-  // Modals & Bottom sheets
-  const [selectedQuote, setSelectedQuote] = useState(null); // Quote selected for options
+  // Overlays — at most one confirmation/design surface at a time.
+  const [selectedQuote, setSelectedQuote] = useState(null); // Quote the options sheet acts on
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isShareOpen, setIsShareOpen] = useState(false);
+  const [isDesignOpen, setIsDesignOpen] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState(null);
 
   // Sync quotes to local storage
   useEffect(() => {
@@ -86,16 +106,6 @@ export default function App() {
     setActiveTab('success');
   };
 
-  const handleDeleteQuote = (id) => {
-    setQuotes((prev) => prev.filter((q) => q.id !== id));
-    setIsMenuOpen(false);
-    setSelectedQuote(null);
-
-    if (activeQuoteIndex > 0 && activeQuoteIndex >= quotes.length - 1) {
-      setActiveQuoteIndex(quotes.length - 2);
-    }
-  };
-
   const handleViewInLibrary = () => {
     if (savedQuotePreview) {
       const index = quotes.findIndex(q => q.id === savedQuotePreview.id);
@@ -112,220 +122,186 @@ export default function App() {
     setActiveTab('add');
   };
 
+  const closeOverlays = () => {
+    setIsMenuOpen(false);
+    setIsShareOpen(false);
+    setIsDesignOpen(false);
+    setPendingDelete(null);
+    setSelectedQuote(null);
+  };
+
+  const confirmDelete = () => {
+    if (!pendingDelete) return;
+    setQuotes((prev) => prev.filter((q) => q.id !== pendingDelete.id));
+    setActiveQuoteIndex((prev) => (prev > 0 ? prev - 1 : 0));
+    closeOverlays();
+  };
+
   const filteredQuotes = favoritesOnly ? quotes.filter(q => q.favorite) : quotes;
   const activeQuote = filteredQuotes[activeQuoteIndex];
   const themeClass = activeQuote && activeTab === 'feed'
     ? `theme-${activeQuote.theme.toLowerCase().replace(/\s+/g, '-')}`
     : 'theme-charcoal-solid';
 
+  // Backdrop resolution is pure derivation from (style, palette, photoId),
+  // so it is memoized rather than recomputed on every quote advance.
+  const photoPool = useMemo(() => poolFor(style, palette), [style, palette]);
+  const backdrop = useMemo(
+    () => (photoMode === 'on' ? resolveBackdrop(style, palette, photoId) : null),
+    [photoMode, style, palette, photoId]
+  );
+
+  // The CSS cascade resolves light/dark on its own; the canvas export
+  // bake cannot read custom properties, so the same decision is made
+  // here and handed down explicitly.
+  const photoTone = useMemo(
+    () =>
+      surfaceTone({
+        palette,
+        quoteTheme: activeQuote?.theme,
+        timeTheme: theme,
+      }),
+    [palette, activeQuote?.theme, theme]
+  );
+  const photoTint = useMemo(() => tintFor(palette, photoTone), [palette, photoTone]);
+
+  // The exported card must paint the same colours the live cascade
+  // resolves, otherwise `paper` would put white text on a light scrim.
+  const cardColors = useMemo(
+    () =>
+      effectiveCardColors({
+        palette,
+        quoteTheme: activeQuote?.theme,
+        tone: photoTone,
+      }),
+    [palette, activeQuote?.theme, photoTone]
+  );
+
   return (
-    <div className={`app-container ${themeClass}`} data-theme={theme}>
-      {/* Feed View */}
-      {activeTab === 'feed' && (
-        <FeedView
-          quotes={quotes}
-          activeQuoteIndex={activeQuoteIndex}
-          setActiveQuoteIndex={setActiveQuoteIndex}
-          favoritesOnly={favoritesOnly}
-          setFavoritesOnly={setFavoritesOnly}
-          onOpenMenu={(quote) => {
-            setSelectedQuote(quote);
-            setIsMenuOpen(true);
+    <div
+      className={`app-container ${themeClass}`}
+      data-theme={theme}
+      data-style={style}
+      data-palette={palette}
+    >
+      <a className="skip-link" href="#main">
+        Skip to quote
+      </a>
+
+      <PhotoBackdrop photo={backdrop} tint={photoTint} visible={activeTab === 'feed'} />
+
+      <main id="main" tabIndex={-1}>
+        {/* Feed View */}
+        {activeTab === 'feed' && (
+          <FeedView
+            quotes={quotes}
+            activeQuoteIndex={activeQuoteIndex}
+            setActiveQuoteIndex={setActiveQuoteIndex}
+            favoritesOnly={favoritesOnly}
+            setFavoritesOnly={setFavoritesOnly}
+            onOpenMenu={(quote) => {
+              setSelectedQuote(quote);
+              setIsMenuOpen(true);
+            }}
+            onToggleFavorite={handleToggleFavorite}
+            onOpenShare={(quote) => {
+              setSelectedQuote(quote);
+              setIsShareOpen(true);
+            }}
+            onOpenDesign={() => setIsDesignOpen(true)}
+            onOpenAdd={() => setActiveTab('add')}
+          />
+        )}
+
+        {/* Add Flow View */}
+        {activeTab === 'add' && (
+          <AddFlow
+            onSave={handleAddQuote}
+            onCancel={() => setActiveTab('feed')}
+          />
+        )}
+
+        {/* Success View */}
+        {activeTab === 'success' && (
+          <SuccessView
+            quote={savedQuotePreview}
+            onViewLibrary={handleViewInLibrary}
+            onAddAnother={handleAddAnother}
+          />
+        )}
+      </main>
+
+      {/* Contextual Options Drawer */}
+      {isMenuOpen && selectedQuote && (
+        <OptionsSheet
+          quote={selectedQuote}
+          onToggleFavorite={() => {
+            handleToggleFavorite(selectedQuote.id);
+            setSelectedQuote((prev) => ({ ...prev, favorite: !prev.favorite }));
+            closeOverlays();
           }}
-          onToggleFavorite={handleToggleFavorite}
-          onOpenShare={(quote) => {
-            setSelectedQuote(quote);
+          onShare={() => {
+            setIsMenuOpen(false);
             setIsShareOpen(true);
           }}
-          onOpenAdd={() => setActiveTab('add')}
+          onOpenDesign={() => {
+            setIsMenuOpen(false);
+            setIsDesignOpen(true);
+          }}
+          onRequestDelete={() => {
+            setIsMenuOpen(false);
+            setPendingDelete(selectedQuote);
+          }}
+          onClose={closeOverlays}
         />
       )}
 
-      {/* Add Flow View */}
-      {activeTab === 'add' && (
-        <AddFlow
-          onSave={handleAddQuote}
-          onCancel={() => setActiveTab('feed')}
+      {/* Delete Confirmation */}
+      {pendingDelete && (
+        <ConfirmDialog
+          title="Delete this quote?"
+          description={
+            pendingDelete.text.length > 120
+              ? `“${pendingDelete.text.slice(0, 117).trimEnd()}…” will be removed from your library. This cannot be undone.`
+              : `“${pendingDelete.text}” will be removed from your library. This cannot be undone.`
+          }
+          onConfirm={confirmDelete}
+          onCancel={() => setPendingDelete(null)}
         />
       )}
 
-      {/* Success View */}
-      {activeTab === 'success' && (
-        <SuccessView
-          quote={savedQuotePreview}
-          onViewLibrary={handleViewInLibrary}
-          onAddAnother={handleAddAnother}
+      {/* Design & Colour Panel */}
+      {isDesignOpen && (
+        <DesignPanel
+          style={style}
+          palette={palette}
+          photoMode={photoMode}
+          photoPool={photoPool}
+          backdrop={backdrop}
+          onStyleChange={setStyle}
+          onPaletteChange={setPalette}
+          onPhotoModeChange={setPhotoMode}
+          onPhotoChange={setPhotoId}
+          onCyclePhoto={() => cyclePhoto(photoPool)}
+          onReset={resetDesign}
+          onClose={() => setIsDesignOpen(false)}
         />
       )}
 
-      {/* Share Sheet Overlay Modal */}
+      {/* Share Sheet */}
       {isShareOpen && selectedQuote && (
         <ShareSheet
           quote={selectedQuote}
+          style={style}
+          palette={palette}
+          backdrop={backdrop}
+          tint={photoTint}
+          colors={cardColors}
           onClose={() => {
             setIsShareOpen(false);
             setSelectedQuote(null);
           }}
         />
-      )}
-
-      {/* Contextual Options Drawer */}
-      {isMenuOpen && selectedQuote && (
-        <div
-          style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            backgroundColor: 'rgba(0,0,0,0.65)',
-            zIndex: 90,
-            display: 'flex',
-            flexDirection: 'column',
-            justifyContent: 'flex-end',
-            animation: 'fadeIn 0.2s ease-out'
-          }}
-          onClick={() => {
-            setIsMenuOpen(false);
-            setSelectedQuote(null);
-          }}
-        >
-          <div
-            className="glass-panel animate-slide-up"
-            style={{
-              backgroundColor: '#161816',
-              borderTopLeftRadius: 'var(--rounded-lg)',
-              borderTopRightRadius: 'var(--rounded-lg)',
-              padding: '24px var(--spacing-edge-margin) 32px',
-              display: 'flex',
-              flexDirection: 'column',
-              gap: 16,
-              borderBottom: 'none'
-            }}
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div style={{ width: 40, height: 4, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.15)', alignSelf: 'center', marginBottom: 12 }} />
-
-            <div style={{ paddingBottom: 12, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
-              <p className="attribution" style={{ fontSize: 11, color: 'rgba(255,255,255,0.4)', marginBottom: 4 }}>SELECTED WISDOM</p>
-              <p style={{ fontSize: 13, color: '#ffffff', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', fontFamily: 'var(--font-quote)' }}>
-                "{selectedQuote.text}"
-              </p>
-            </div>
-
-            <button
-              onClick={() => {
-                handleToggleFavorite(selectedQuote.id);
-                setSelectedQuote(prev => ({ ...prev, favorite: !prev.favorite }));
-                setIsMenuOpen(false);
-              }}
-              className="scale-press"
-              style={{
-                width: '100%',
-                padding: '16px 20px',
-                borderRadius: 'var(--rounded-default)',
-                background: 'rgba(255, 255, 255, 0.04)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                color: '#ffffff',
-                fontFamily: 'var(--font-attribution)',
-                fontSize: 14,
-                fontWeight: '600',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-                cursor: 'pointer',
-                textAlign: 'left'
-              }}
-            >
-              <Heart size={18} fill={selectedQuote.favorite ? "white" : "none"} style={{ color: selectedQuote.favorite ? 'var(--color-error)' : 'inherit' }} />
-              {selectedQuote.favorite ? 'Remove from Favorites' : 'Add to Favorites'}
-            </button>
-
-            <button
-              onClick={() => {
-                setIsMenuOpen(false);
-                setIsShareOpen(true);
-              }}
-              className="scale-press"
-              style={{
-                width: '100%',
-                padding: '16px 20px',
-                borderRadius: 'var(--rounded-default)',
-                background: 'rgba(255, 255, 255, 0.04)',
-                border: '1px solid rgba(255, 255, 255, 0.08)',
-                color: '#ffffff',
-                fontFamily: 'var(--font-attribution)',
-                fontSize: 14,
-                fontWeight: '600',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-                cursor: 'pointer',
-                textAlign: 'left'
-              }}
-            >
-              <Share2 size={18} />
-              Share and Customize Layout
-            </button>
-
-            <button
-              onClick={() => {
-                if (window.confirm("Are you sure you want to delete this quote from your library?")) {
-                  handleDeleteQuote(selectedQuote.id);
-                }
-              }}
-              className="scale-press"
-              style={{
-                width: '100%',
-                padding: '16px 20px',
-                borderRadius: 'var(--rounded-default)',
-                background: 'rgba(239, 68, 68, 0.08)',
-                border: '1px solid rgba(239, 68, 68, 0.2)',
-                color: '#ef4444',
-                fontFamily: 'var(--font-attribution)',
-                fontSize: 14,
-                fontWeight: '600',
-                display: 'flex',
-                alignItems: 'center',
-                gap: 12,
-                cursor: 'pointer',
-                textAlign: 'left'
-              }}
-            >
-              <Trash2 size={18} />
-              Delete Permanently
-            </button>
-
-            <button
-              onClick={() => {
-                setIsMenuOpen(false);
-                setSelectedQuote(null);
-              }}
-              className="scale-press"
-              style={{
-                width: '100%',
-                padding: '14px',
-                borderRadius: 'var(--rounded-default)',
-                background: 'none',
-                border: 'none',
-                color: 'rgba(255,255,255,0.4)',
-                fontFamily: 'var(--font-label)',
-                fontSize: 11,
-                fontWeight: '700',
-                letterSpacing: '0.1em',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 6,
-                cursor: 'pointer',
-                marginTop: 8
-              }}
-            >
-              <ArrowDown size={14} />
-              DISMISS
-            </button>
-          </div>
-        </div>
       )}
     </div>
   );

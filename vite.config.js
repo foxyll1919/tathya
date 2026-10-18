@@ -3,6 +3,12 @@ import react from '@vitejs/plugin-react'
 import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
+//
+// Note on secrets: this config reads no environment variables and the
+// build needs none. UNSPLASH_ACCESS_KEY is used *only* by the authoring
+// script scripts/curate-photos.mjs on the developer's machine — the app
+// makes zero Unsplash API calls and hotlinks images.unsplash.com
+// directly, so there is nothing for Vercel to configure.
 export default defineConfig({
   plugins: [
     react(),
@@ -29,7 +35,28 @@ export default defineConfig({
             type: 'image/png'
           }
         ]
+      },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,woff2,png,svg}'],
+        // Backdrops come from Unsplash's CDN. Cache-first so the app
+        // keeps its backdrop offline after the first view; the CDN
+        // already serves a 1-year immutable cache, so this only costs
+        // us storage, not freshness.
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/images\.unsplash\.com\/.*/i,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'unsplash-backdrops',
+              expiration: {
+                maxEntries: 60,
+                maxAgeSeconds: 60 * 60 * 24 * 30
+              },
+              cacheableResponse: { statuses: [0, 200] }
+            }
+          }
+        ]
       }
     })
-  ],
+  ]
 })
